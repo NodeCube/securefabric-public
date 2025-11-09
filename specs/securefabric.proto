@@ -1,0 +1,84 @@
+// SPDX-FileCopyrightText: 2025 NodeCube d.o.o. and contributors
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+package securefabric;
+
+// FabricNode service provides secure messaging operations
+service FabricNode {
+  // Send a message to the fabric
+  rpc Send (SendReq) returns (SendResp);
+
+  // Subscribe to messages on a topic
+  rpc Subscribe (SubscribeReq) returns (stream Envelope);
+
+  // Get node statistics and metadata
+  rpc Stats (StatsReq) returns (StatsResp);
+
+  // Join this node to another peer
+  rpc Join (NodeInfo) returns (JoinResp);
+
+  // Remove a peer from this node
+  rpc Unjoin (NodeId) returns (JoinResp);
+}
+
+// Envelope wraps all messages with authentication and encryption metadata
+message Envelope {
+  bytes pubkey = 1;      // 32B Ed25519 public key of sender
+  bytes sig = 2;         // 64B signature over aad||header||payload
+  bytes nonce = 3;       // 24B XChaCha nonce (client-generated, must be unique)
+  bytes aad = 4;         // serialized AAD: topic, tenant_id, content_type, key_version
+  bytes payload = 5;     // plaintext (mode=plaintext) or E2E ciphertext (mode=ciphertext)
+  uint64 seq = 6;        // strictly increasing sequence number per pubkey
+  string msg_id = 7;     // hex(blake3(pubkey||seq||nonce)) - unique message identifier
+  uint32 key_version = 8; // E2E topic key version (0 if none)
+  string topic = 9;      // normalized topic string
+}
+
+// Send request containing an envelope
+message SendReq {
+  Envelope envelope = 1; // Complete signed and optionally encrypted envelope
+}
+
+// Send response confirming receipt
+message SendResp {
+  bool ok = 1;
+  string msg_id = 2;     // Echo of message ID for confirmation
+}
+
+// Subscribe to a topic
+message SubscribeReq {
+  bytes topic = 1;       // Topic pattern to subscribe to
+}
+
+// Request node statistics
+message StatsReq {}
+
+// Node statistics and build metadata
+message StatsResp {
+  uint32 peers = 1;           // Number of connected peers
+  double p95_latency_ms = 2;  // 95th percentile latency in milliseconds
+
+  // Version and build metadata
+  string version = 3;         // Semantic version
+  string git_sha = 4;         // Git commit SHA
+  string built = 5;           // Build timestamp
+  string rustc = 6;           // Rust compiler version
+}
+
+// Peer node information
+message NodeInfo {
+  string node_id = 1;    // Unique node identifier
+  string addr = 2;       // Network address (host:port)
+  bytes pubkey = 3;      // Node's Ed25519 public key
+}
+
+// Join response
+message JoinResp {
+  bool ok = 1;
+}
+
+// Node identifier for unjoin operations
+message NodeId {
+  string node_id = 1;
+}
