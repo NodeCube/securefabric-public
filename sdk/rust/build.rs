@@ -6,6 +6,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tonic_build::configure()
         .build_server(false)
-        .compile_protos(&["../proto/securefabric.proto"], &["../proto"])?;
+        .compile_protos(&["../../specs/securefabric.proto"], &["../../specs"])?;
     Ok(())
 }

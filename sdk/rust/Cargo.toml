@@ -9,8 +9,6 @@ license = "AGPL-3.0-or-later"
 description = "Rust SDK for SecureFabric"
 
 [dependencies]
-securefabric-core = { path = "../securefabric-core" }
-
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tokio-stream = "0.1"
 tonic = { version = "0.12", features = ["transport", "tls"] }
