@@ -144,6 +144,7 @@ jobs:
             --grpc_python_out=securefabric \
             --pyi_out=securefabric \
             ../../specs/securefabric.proto
+          black securefabric/securefabric_pb2.py securefabric/securefabric_pb2_grpc.py securefabric/securefabric_pb2.pyi
 
       - name: Lint with black
         working-directory: sdk/python
