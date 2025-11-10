@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master, fix/js-sdk-runtime-issues, claude/**]
+    branches: [main, claude/**]
   pull_request:
-    branches: [main, master, fix/js-sdk-runtime-issues]
+    branches: [main]
   workflow_dispatch:
 
 env:
