@@ -11,28 +11,31 @@ Usage:
     python send_receive.py stats
 
 Environment variables:
-    SF_ENDPOINT: SecureFabric node endpoint (default: https://localhost:50051)
+    SF_ENDPOINT: SecureFabric node endpoint (default: localhost:50051)
     SF_TOKEN: Bearer token for authentication (required)
-    SF_KEY_PATH: Path to Ed25519 private key file (32 bytes, optional)
+    SF_CA_CERT: Path to CA certificate file (optional, for TLS)
+    SF_CLIENT_CERT: Path to client certificate file (optional, for mTLS)
+    SF_CLIENT_KEY: Path to client key file (optional, for mTLS)
 """
 
+import asyncio
 import os
 import sys
 from pathlib import Path
 
-import nacl.signing
-
 # Add SDK to path for local development
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "sdk" / "python"))
 
-from securefabric import Client, ClientConfig
+from securefabric import SecureFabricClient
 
 
-def main() -> None:
+async def main() -> None:
     """Main entry point"""
-    endpoint = os.getenv("SF_ENDPOINT", "https://localhost:50051")
+    endpoint = os.getenv("SF_ENDPOINT", "localhost:50051")
     token = os.getenv("SF_TOKEN")
-    key_path = os.getenv("SF_KEY_PATH")
+    ca_cert_path = os.getenv("SF_CA_CERT")
+    client_cert_path = os.getenv("SF_CLIENT_CERT")
+    client_key_path = os.getenv("SF_CLIENT_KEY")
 
     if not token:
         print("Error: SF_TOKEN environment variable not set", file=sys.stderr)
@@ -42,56 +45,54 @@ def main() -> None:
     print("============================")
     print(f"Endpoint: {endpoint}")
 
-    # Load or generate signing key
-    if key_path:
-        # Load from file
-        key_bytes = Path(key_path).read_bytes()
-        if len(key_bytes) != 32:
-            print("Error: Key file must contain exactly 32 bytes", file=sys.stderr)
-            sys.exit(1)
-        signing_key = nacl.signing.SigningKey(key_bytes)
-        print("Loaded signing key from file")
-    else:
-        # Generate new key
-        print("No key provided, generating new Ed25519 keypair...")
-        signing_key = nacl.signing.SigningKey.generate()
-
-    pubkey_hex = signing_key.verify_key.encode().hex()
-    print(f"Public key: {pubkey_hex}")
+    # Load TLS certificates if provided
+    tls = None
+    if ca_cert_path or client_cert_path or client_key_path:
+        tls = {}
+        if ca_cert_path:
+            tls['ca_cert'] = Path(ca_cert_path).read_bytes()
+            print(f"Loaded CA certificate from {ca_cert_path}")
+        if client_cert_path:
+            tls['client_cert'] = Path(client_cert_path).read_bytes()
+            print(f"Loaded client certificate from {client_cert_path}")
+        if client_key_path:
+            tls['client_key'] = Path(client_key_path).read_bytes()
+            print(f"Loaded client key from {client_key_path}")
     print()
 
-    config = ClientConfig(
-        endpoint=endpoint,
-        bearer_token=token,
-        signing_key=signing_key,
-    )
+    client = SecureFabricClient(endpoint, tls=tls, bearer=token)
 
     mode = sys.argv[1] if len(sys.argv) > 1 else "send"
 
-    with Client(config) as client:
+    try:
         if mode == "send":
-            topic = "demo.messages"
-            message = "Hello from Python!"
+            topic = b"demo.messages"
+            to = b"node-B"
+            message = b"Hello from Python!"
 
-            print(f"Sending message to topic: {topic}")
-            print(f"Message: {message}")
+            print(f"Sending message to topic: {topic.decode('utf-8')}")
+            print(f"To: {to.decode('utf-8')}")
+            print(f"Message: {message.decode('utf-8')}")
 
-            msg_id = client.send(topic, message.encode("utf-8"))
-            print("✓ Message sent successfully!")
-            print(f"  Message ID: {msg_id}")
+            ok = await client.send(topic, to, message)
+            if ok:
+                print("✓ Message sent successfully!")
+            else:
+                print("✗ Message send failed")
 
         elif mode == "subscribe":
-            topic = "demo.messages"
-            print(f"Subscribing to topic: {topic}")
+            topic = b"demo.messages"
+            print(f"Subscribing to topic: {topic.decode('utf-8')}")
             print("Waiting for messages (Ctrl+C to exit)...")
             print()
 
             try:
-                for envelope in client.subscribe(topic):
-                    payload = envelope.payload.decode("utf-8")
+                async for envelope in client.subscribe(topic):
+                    payload = envelope.payload.decode("utf-8", errors="replace")
                     print("📨 Received message:")
-                    print(f"  Topic: {envelope.topic}")
-                    print(f"  Message ID: {envelope.msg_id}")
+                    print(f"  From: {envelope.from_node.decode('utf-8', errors='replace')}")
+                    print(f"  Topic: {envelope.topic.decode('utf-8', errors='replace')}")
+                    print(f"  Message ID: {envelope.msg_id.hex()}")
                     print(f"  Payload: {payload}")
                     print()
             except KeyboardInterrupt:
@@ -99,19 +100,20 @@ def main() -> None:
 
         elif mode == "stats":
             print("Fetching node statistics...")
-            stats = client.stats()
+            stats = await client.stats()
             print("Node Statistics:")
-            print(f"  Peers: {stats.peers}")
-            print(f"  P95 Latency: {stats.p95_latency_ms:.2f}ms")
-            print(f"  Version: {stats.version}")
-            print(f"  Git SHA: {stats.git_sha}")
-            print(f"  Built: {stats.built}")
-            print(f"  Rust: {stats.rustc}")
+            print(f"  {stats}")
 
         else:
-            print(f"Invalid mode: {mode}. Use 'send', 'subscribe', or 'stats'", file=sys.stderr)
+            print(
+                f"Invalid mode: {mode}. Use 'send', 'subscribe', or 'stats'",
+                file=sys.stderr
+            )
             sys.exit(1)
+
+    finally:
+        await client.close()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
