@@ -2,18 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use securefabric_sdk::{Client, ClientConfig};
+use securefabric_sdk::{crypto::Keypair, Client};
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "securefabric-demo")]
 #[command(about = "SecureFabric Rust SDK Demo", long_about = None)]
 struct Args {
     /// SecureFabric node endpoint
-    #[arg(long, env = "SF_ENDPOINT", default_value = "https://localhost:50051")]
+    #[arg(long, default_value = "localhost:50051")]
     endpoint: String,
 
     /// Bearer token for authentication
-    #[arg(long, env = "SF_TOKEN")]
+    #[arg(long)]
     token: String,
 
     /// Topic to send/receive messages
@@ -27,6 +29,10 @@ struct Args {
     /// Message to send (only for send mode)
     #[arg(long, default_value = "Hello from Rust!")]
     message: String,
+
+    /// Path to Ed25519 private key file (32 bytes hex). If not provided, generates a new key.
+    #[arg(long)]
+    key_path: Option<PathBuf>,
 }
 
 #[tokio::main]
@@ -37,14 +43,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("==========================");
     println!("Endpoint: {}", args.endpoint);
     println!("Topic: {}", args.topic);
-    println!();
 
-    let config = ClientConfig {
-        endpoint: args.endpoint,
-        bearer_token: args.token,
+    // Load or generate signing key
+    let keypair = if let Some(key_path) = &args.key_path {
+        // Load from file (hex format)
+        let hex = fs::read_to_string(key_path)?.trim().to_string();
+        Keypair::from_hex(&hex)?
+    } else {
+        // Generate new key
+        println!("No key provided, generating new Ed25519 keypair...");
+        Keypair::generate()
     };
 
-    let client = Client::connect(config).await?;
+    println!("Public key: {}", keypair.verifying_key_hex());
+    println!();
+
+    let mut client = Client::new(&args.endpoint)
+        .await?
+        .with_signing_key(keypair.signing_key)
+        .with_bearer(&args.token);
 
     match args.mode.as_str() {
         "send" => {
@@ -55,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         "subscribe" => {
             println!("Subscribing to topic: {}", args.topic);
-            let mut stream = client.subscribe(&args.topic).await?;
+            let mut stream = client.subscribe(args.topic.as_bytes()).await?;
 
             println!("Waiting for messages (Ctrl+C to exit)...");
             println!();
@@ -68,7 +85,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("📨 Received message:");
                         println!("  Topic: {}", env.topic);
                         println!("  Message ID: {}", env.msg_id);
+                        println!("  Sequence: {}", env.seq);
                         println!("  Payload: {}", payload);
+
+                        // Verify signature
+                        if let Ok(valid) = client.verify(&env) {
+                            println!("  Signature valid: {}", valid);
+                        }
+
+                        // Verify message ID
+                        println!("  Message ID valid: {}", client.verify_msg_id(&env));
                         println!();
                     }
                     Err(e) => {
@@ -77,19 +103,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
-        "stats" => {
-            println!("Fetching node statistics...");
-            let stats = client.stats().await?;
-            println!("Node Statistics:");
-            println!("  Peers: {}", stats.peers);
-            println!("  P95 Latency: {:.2}ms", stats.p95_latency_ms);
-            println!("  Version: {}", stats.version);
-            println!("  Git SHA: {}", stats.git_sha);
-            println!("  Built: {}", stats.built);
-            println!("  Rust: {}", stats.rustc);
-        }
         _ => {
-            eprintln!("Invalid mode: {}. Use 'send', 'subscribe', or 'stats'", args.mode);
+            eprintln!("Invalid mode: {}. Use 'send' or 'subscribe'", args.mode);
             std::process::exit(1);
         }
     }

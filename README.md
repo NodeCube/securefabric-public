@@ -1,10 +1,13 @@
 # SecureFabric — Open SDKs & Protocol (Public)
 
-[![CI](https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml/badge.svg)](https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml)
+[![CI](https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml/badge.svg)](
+https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-SecureFabric is a secure, low-latency messaging fabric designed for verified senders and end-to-end confidentiality.
-This public repo hosts SDKs, examples, and protocol specs. The production node is available as a signed binary under a commercial license.
+SecureFabric is a secure, low-latency messaging fabric designed for verified
+senders and end-to-end confidentiality. This public repo hosts SDKs, examples,
+and protocol specs. The production node is available as a signed binary under
+a commercial license.
 
 ## What's here
 
@@ -70,8 +73,8 @@ pip install securefabric-sdk
 The production-grade node is distributed as a signed binary:
 
 1. Download from [SecureFabric Releases](https://github.com/NodeCube/securefabric-core/releases)
-2. Verify signature with `tools/verify-release-signature.sh`
-3. Follow deployment guide in the private repository documentation
+1. Verify signature with `tools/verify-release-signature.sh`
+1. Follow deployment guide in the private repository documentation
 
 ## Commercial node & hosting
 

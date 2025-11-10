@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: 2025 NodeCube d.o.o. and contributors
+# SPDX-License-Identifier: Apache-2.0
+
+"""
+Generated protocol buffer code for SecureFabric.
+
+IMPORTANT: This file is a stub placeholder. For production use, generate the
+actual protobuf files by running:
+
+    cd sdk/python && python -m grpc_tools.protoc -I../../specs \
+        --python_out=securefabric --grpc_python_out=securefabric \
+        --pyi_out=securefabric ../../specs/securefabric.proto
+
+This stub exists to allow the SDK to be imported for development and testing
+without requiring protoc to be installed locally.
+"""
+
+
+# Minimal stubs for type checking
+class Envelope:
+    pubkey: bytes
+    sig: bytes
+    nonce: bytes
+    aad: bytes
+    payload: bytes
+    seq: int
+    msg_id: str
+    key_version: int
+    topic: str
+
+    def __init__(
+        self,
+        pubkey: bytes = b"",
+        sig: bytes = b"",
+        nonce: bytes = b"",
+        aad: bytes = b"",
+        payload: bytes = b"",
+        seq: int = 0,
+        msg_id: str = "",
+        key_version: int = 0,
+        topic: str = "",
+    ):
+        self.pubkey = pubkey
+        self.sig = sig
+        self.nonce = nonce
+        self.aad = aad
+        self.payload = payload
+        self.seq = seq
+        self.msg_id = msg_id
+        self.key_version = key_version
+        self.topic = topic
+
+
+class SendReq:
+    envelope: Envelope
+
+    def __init__(self, envelope: Envelope | None = None):
+        self.envelope = envelope or Envelope()
+
+
+class SendResp:
+    ok: bool
+    msg_id: str
+
+    def __init__(self, ok: bool = False, msg_id: str = ""):
+        self.ok = ok
+        self.msg_id = msg_id
+
+
+class SubscribeReq:
+    topic: bytes
+
+    def __init__(self, topic: bytes = b""):
+        self.topic = topic
+
+
+class StatsReq:
+    pass
+
+
+class StatsResp:
+    peers: int
+    p95_latency_ms: float
+    version: str
+    git_sha: str
+    built: str
+    rustc: str
+
+    def __init__(
+        self,
+        peers: int = 0,
+        p95_latency_ms: float = 0.0,
+        version: str = "",
+        git_sha: str = "",
+        built: str = "",
+        rustc: str = "",
+    ):
+        self.peers = peers
+        self.p95_latency_ms = p95_latency_ms
+        self.version = version
+        self.git_sha = git_sha
+        self.built = built
+        self.rustc = rustc
+
+
+class NodeInfo:
+    node_id: str
+    addr: str
+    pubkey: bytes
+
+    def __init__(self, node_id: str = "", addr: str = "", pubkey: bytes = b""):
+        self.node_id = node_id
+        self.addr = addr
+        self.pubkey = pubkey
+
+
+class JoinResp:
+    ok: bool
+
+    def __init__(self, ok: bool = False):
+        self.ok = ok
+
+
+class NodeId:
+    node_id: str
+
+    def __init__(self, node_id: str = ""):
+        self.node_id = node_id
