@@ -45,8 +45,10 @@ signing_key = nacl.signing.SigningKey.generate()
 - ❌ Store keys in plain text files in production
 
 **DO:**
+
 - ✅ Use environment variables for development
-- ✅ Use secret management systems in production (AWS KMS, HashiCorp Vault, etc.)
+- ✅ Use secret management systems in production (AWS KMS, HashiCorp Vault,
+  etc.)
 - ✅ Use hardware security modules (HSM) for high-security applications
 - ✅ Set restrictive file permissions (0600) for key files
 - ✅ Encrypt keys at rest
@@ -78,7 +80,8 @@ cargo run --example securefabric-demo -- --key-path signing_key.bin
 ```
 
 **Add to .gitignore:**
-```
+
+```gitignore
 *.bin
 signing_key*
 private_key*
@@ -214,10 +217,10 @@ signing_key = nacl.signing.SigningKey(bytes.fromhex(key_hex))
 To rotate keys without service disruption:
 
 1. Generate new signing key
-2. Update node with both old and new public keys
-3. Deploy clients with new signing key
-4. Wait for all clients to update
-5. Remove old public key from node configuration
+1. Update node with both old and new public keys
+1. Deploy clients with new signing key
+1. Wait for all clients to update
+1. Remove old public key from node configuration
 
 ## Troubleshooting
 
