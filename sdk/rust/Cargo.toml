@@ -5,31 +5,29 @@
 name = "securefabric-sdk"
 version = "0.1.0"
 edition = "2021"
-authors = ["NodeCube Team <legal@nodecube.io>"]
-license = "Apache-2.0"
-description = "Rust SDK for SecureFabric secure messaging"
-homepage = "https://securefabric.io"
-repository = "https://github.com/NodeCube/securefabric-public"
-keywords = ["messaging", "grpc", "encryption", "security"]
-categories = ["network-programming", "cryptography"]
+license = "AGPL-3.0-or-later"
+description = "Rust SDK for SecureFabric"
 
 [dependencies]
-tonic = "0.12"
-prost = "0.13"
+securefabric-core = { path = "../securefabric-core" }
+
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tokio-stream = "0.1"
-anyhow = "1.0"
-thiserror = "1.0"
-ed25519-dalek = "2.1"
-chacha20poly1305 = "0.10"
-blake3 = "1.5"
+tonic = { version = "0.12", features = ["transport", "tls"] }
+prost = "0.13"
+
+ed25519-dalek = "2"
+blake3 = "1"
 hex = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-getrandom = "0.2"
+rand = "0.8"
+anyhow = "1"
+thiserror = "2"
+
+# TLS support
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+rustls-pemfile = "2"
 
 [build-dependencies]
+prost-build = "0.13"
 tonic-build = "0.12"
-
-[dev-dependencies]
-tokio-test = "0.4"
+protoc-bin-vendored = "3"

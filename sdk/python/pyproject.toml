@@ -1,55 +1,26 @@
-# SPDX-FileCopyrightText: 2025 NodeCube d.o.o. and contributors
-# SPDX-License-Identifier: Apache-2.0
-
-[build-system]
-requires = ["setuptools>=65", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "securefabric-sdk"
+name = "securefabric"
 version = "0.1.0"
-description = "Python SDK for SecureFabric secure messaging"
-authors = [{name = "NodeCube Team", email = "legal@nodecube.io"}]
-license = {text = "Apache-2.0"}
+description = "Async Python SDK for SecureFabric node gRPC API"
+authors = ["SecureFabric <>"]
 readme = "README.md"
-requires-python = ">=3.9"
-keywords = ["securefabric", "messaging", "grpc", "encryption", "security"]
+requires-python = ">=3.8"
+license = { text = "AGPL-3.0-or-later" }
 classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+ "License :: OSI Approved :: GNU Affero General Public License v3",
+ "Programming Language :: Python ::3",
+ "Programming Language :: Python ::3 :: Only",
+ "Operating System :: OS Independent",
 ]
-dependencies = [
-    "grpcio>=1.60.0",
-    "grpcio-tools>=1.60.0",
-    "protobuf>=4.25.0",
-    "pynacl>=1.5.0",
-    "blake3>=0.4.1",
-]
+
+[project.dependencies]
+grpcio = ">=1.54"
+protobuf = ">=4.0"
+grpcio-tools = { version = ">=1.54", optional = true }
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.4.0",
-    "black>=23.0.0",
-    "mypy>=1.7.0",
-    "grpc-stubs>=1.53.0",
-]
+dev = ["pytest", "pytest-asyncio", "requests"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["securefabric*"]
-
-[tool.black]
-line-length = 100
-target-version = ['py39', 'py310', 'py311', 'py312']
-
-[tool.mypy]
-python_version = "3.9"
-strict = true
-warn_return_any = true
-warn_unused_configs = true
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
