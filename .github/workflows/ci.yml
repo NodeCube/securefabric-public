@@ -44,6 +44,12 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Ensure cargo cache dirs exist
+        run: |
+          mkdir -p ~/.cargo/registry
+          mkdir -p ~/.cargo/git
+          mkdir -p target
+
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -80,6 +86,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure npm cache dir exists
+        run: mkdir -p ~/.npm
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
