@@ -14,6 +14,7 @@ import pytest
 def test_import():
     """Test that the SDK can be imported"""
     from securefabric import SecureFabricClient
+
     assert SecureFabricClient is not None
 
 
@@ -22,7 +23,7 @@ async def test_client_construction():
     """Test that a client can be constructed"""
     from securefabric import SecureFabricClient
 
-    client = SecureFabricClient('localhost:50051')
+    client = SecureFabricClient("localhost:50051")
     assert client is not None
     await client.close()
 
@@ -33,10 +34,10 @@ async def test_client_with_tls():
     from securefabric import SecureFabricClient
 
     tls = {
-        'ca_cert': b'fake-ca',
-        'client_cert': b'fake-cert',
-        'client_key': b'fake-key',
+        "ca_cert": b"fake-ca",
+        "client_cert": b"fake-cert",
+        "client_key": b"fake-key",
     }
-    client = SecureFabricClient('localhost:50051', tls=tls, bearer='test-token')
+    client = SecureFabricClient("localhost:50051", tls=tls, bearer="test-token")
     assert client is not None
     await client.close()

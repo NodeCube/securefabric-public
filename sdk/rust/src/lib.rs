@@ -87,14 +87,14 @@ impl Client {
     }
 
     /// Build an envelope with signature
-    fn build_envelope(
-        &self,
-        topic: &str,
-        payload: &[u8],
-    ) -> Result<Envelope> {
-        let signing_key = self.signing_key.as_ref()
+    fn build_envelope(&self, topic: &str, payload: &[u8]) -> Result<Envelope> {
+        let signing_key = self
+            .signing_key
+            .as_ref()
             .context("No signing key configured")?;
-        let verifying_key = self.verifying_key.as_ref()
+        let verifying_key = self
+            .verifying_key
+            .as_ref()
             .context("No verifying key configured")?;
 
         let seq = self.sequence.fetch_add(1, Ordering::SeqCst);
@@ -201,12 +201,15 @@ impl Client {
         }
 
         let vk = VerifyingKey::from_bytes(
-            envelope.pubkey.as_slice().try_into()
-                .context("Invalid pubkey length")?
-        ).context("Invalid public key")?;
+            envelope
+                .pubkey
+                .as_slice()
+                .try_into()
+                .context("Invalid pubkey length")?,
+        )
+        .context("Invalid public key")?;
 
-        let sig = ed25519_dalek::Signature::from_slice(&envelope.sig)
-            .context("parse signature")?;
+        let sig = ed25519_dalek::Signature::from_slice(&envelope.sig).context("parse signature")?;
 
         // Verify: signature = Ed25519(aad || payload)
         let mut message = Vec::new();
