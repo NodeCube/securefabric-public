@@ -4,11 +4,15 @@ import subprocess
 import time
 import requests
 import pytest
+import shutil
 from securefabric import SecureFabricClient
 
 COMPOSE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 
+@pytest.mark.skipif(
+    shutil.which("docker-compose") is None, reason="docker-compose not available"
+)
 @pytest.mark.asyncio
 async def test_sdk_against_compose():
     # Start docker-compose in background
