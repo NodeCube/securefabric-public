@@ -27,6 +27,8 @@ dev = [
     "black",
     "mypy",
     "grpcio-tools>=1.54",
+    "types-protobuf",
+    "types-grpcio",
 ]
 
 [build-system]
