@@ -2,10 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { SecureFabricClient } from '@securefabric/sdk';
+import * as ed25519 from '@noble/ed25519';
+import * as fs from 'fs';
 
 async function main() {
   const endpoint = process.env.SF_ENDPOINT || 'https://localhost:50051';
   const token = process.env.SF_TOKEN;
+  const keyPath = process.env.SF_KEY_PATH;
 
   if (!token) {
     console.error('Error: SF_TOKEN environment variable not set');
@@ -15,11 +18,33 @@ async function main() {
   console.log('SecureFabric JavaScript SDK Demo');
   console.log('==================================');
   console.log(`Endpoint: ${endpoint}`);
+
+  // Load or generate signing key
+  let signingKey: Uint8Array;
+  if (keyPath) {
+    // Load from file
+    const keyBytes = fs.readFileSync(keyPath);
+    if (keyBytes.length !== 32) {
+      console.error('Error: Key file must contain exactly 32 bytes');
+      process.exit(1);
+    }
+    signingKey = new Uint8Array(keyBytes);
+    console.log('Loaded signing key from file');
+  } else {
+    // Generate new key
+    console.log('No key provided, generating new Ed25519 keypair...');
+    signingKey = ed25519.utils.randomPrivateKey();
+  }
+
+  const publicKey = await ed25519.getPublicKey(signingKey);
+  const pubkeyHex = Buffer.from(publicKey).toString('hex');
+  console.log(`Public key: ${pubkeyHex}`);
   console.log();
 
   const client = new SecureFabricClient({
     endpoint,
     bearerToken: token,
+    signingKey,
   });
 
   const mode = process.argv[2] || 'send';

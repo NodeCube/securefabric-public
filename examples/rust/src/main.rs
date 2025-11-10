@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use clap::Parser;
-use securefabric_sdk::{Client, ClientConfig};
+use securefabric_sdk::{Client, ClientConfig, SigningKey};
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "securefabric-demo")]
@@ -27,6 +29,10 @@ struct Args {
     /// Message to send (only for send mode)
     #[arg(long, default_value = "Hello from Rust!")]
     message: String,
+
+    /// Path to Ed25519 private key file (32 bytes). If not provided, generates a new key.
+    #[arg(long, env = "SF_KEY_PATH")]
+    key_path: Option<PathBuf>,
 }
 
 #[tokio::main]
@@ -37,11 +43,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("==========================");
     println!("Endpoint: {}", args.endpoint);
     println!("Topic: {}", args.topic);
+
+    // Load or generate signing key
+    let signing_key = if let Some(key_path) = &args.key_path {
+        // Load from file
+        let key_bytes = fs::read(key_path)?;
+        if key_bytes.len() != 32 {
+            return Err("Key file must contain exactly 32 bytes".into());
+        }
+        let mut bytes = [0u8; 32];
+        bytes.copy_from_slice(&key_bytes);
+        SigningKey::from_bytes(&bytes)
+    } else {
+        // Generate new key
+        println!("No key provided, generating new Ed25519 keypair...");
+        SigningKey::generate(&mut rand::rngs::OsRng)
+    };
+
+    let pubkey_hex = hex::encode(signing_key.verifying_key().to_bytes());
+    println!("Public key: {}", pubkey_hex);
     println!();
 
     let config = ClientConfig {
         endpoint: args.endpoint,
         bearer_token: args.token,
+        signing_key,
     };
 
     let client = Client::connect(config).await?;
