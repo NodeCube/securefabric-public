@@ -1,8 +1,10 @@
 # SecureFabric — Open SDKs & Protocol (Public)
 
-[![CI](https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml/badge.svg)](
-https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml)
+[![CI]][ci-link]
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+[CI]: https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml/badge.svg
+[ci-link]: https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml
 
 SecureFabric is a secure, low-latency messaging fabric designed for verified
 senders and end-to-end confidentiality. This public repo hosts SDKs, examples,
