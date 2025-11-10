@@ -4,7 +4,9 @@ This guide explains how to generate, store, and use Ed25519 signing keys with th
 
 ## Overview
 
-SecureFabric uses Ed25519 digital signatures to verify message authenticity. Each client needs:
+SecureFabric uses Ed25519 digital signatures to verify message authenticity.
+Each client needs:
+
 - **Private Key (Signing Key)**: 32 bytes, keep secret
 - **Public Key (Verifying Key)**: 32 bytes, derived from private key, shared publicly
 
@@ -15,6 +17,7 @@ SecureFabric uses Ed25519 digital signatures to verify message authenticity. Eac
 Always generate keys using cryptographically secure random number generators:
 
 **Rust:**
+
 ```rust
 use securefabric_sdk::SigningKey;
 use rand::rngs::OsRng;
@@ -23,6 +26,7 @@ let signing_key = SigningKey::generate(&mut OsRng);
 ```
 
 **JavaScript/TypeScript:**
+
 ```typescript
 import * as ed25519 from '@noble/ed25519';
 
@@ -30,6 +34,7 @@ const signingKey = ed25519.utils.randomPrivateKey();
 ```
 
 **Python:**
+
 ```python
 import nacl.signing
 
@@ -39,6 +44,7 @@ signing_key = nacl.signing.SigningKey.generate()
 ### 2. Key Storage
 
 **DO NOT:**
+
 - ❌ Store keys in source code
 - ❌ Commit keys to version control
 - ❌ Share private keys over insecure channels

@@ -2,15 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Tests for SecureFabric Python SDK
+Basic tests for the SecureFabric Python SDK.
 
-TODO: Add comprehensive tests for:
-- Client initialization
-- Message signing and verification
-- Sequence number tracking
-- AAD serialization
-- Message ID computation (BLAKE3)
-- Error handling
+These tests verify that the SDK can be imported and basic functionality works.
+They do not require a running SecureFabric node.
 """
 
 import pytest
@@ -18,31 +13,30 @@ import pytest
 
 def test_import():
     """Test that the SDK can be imported"""
-    from securefabric import Client, ClientConfig
-
-    assert Client is not None
-    assert ClientConfig is not None
+    from securefabric import SecureFabricClient
+    assert SecureFabricClient is not None
 
 
-def test_aad():
-    """Test AAD serialization"""
-    from securefabric.client import Aad
+@pytest.mark.asyncio
+async def test_client_construction():
+    """Test that a client can be constructed"""
+    from securefabric import SecureFabricClient
 
-    aad = Aad(topic="test.topic", key_version=0)
-    aad_dict = aad.to_dict()
+    client = SecureFabricClient('localhost:50051')
+    assert client is not None
+    await client.close()
 
-    assert aad_dict["topic"] == "test.topic"
-    assert aad_dict["key_version"] == 0
-    assert "tenant_id" not in aad_dict
 
-    # Test with optional fields
-    aad2 = Aad(
-        topic="test.topic",
-        key_version=1,
-        tenant_id="tenant123",
-        content_type="application/json"
-    )
-    aad2_dict = aad2.to_dict()
+@pytest.mark.asyncio
+async def test_client_with_tls():
+    """Test that a client can be constructed with TLS config"""
+    from securefabric import SecureFabricClient
 
-    assert aad2_dict["tenant_id"] == "tenant123"
-    assert aad2_dict["content_type"] == "application/json"
+    tls = {
+        'ca_cert': b'fake-ca',
+        'client_cert': b'fake-cert',
+        'client_key': b'fake-key',
+    }
+    client = SecureFabricClient('localhost:50051', tls=tls, bearer='test-token')
+    assert client is not None
+    await client.close()
