@@ -1,10 +1,12 @@
 # SecureFabric API Reference
 
-This document describes the SecureFabric gRPC API. For protocol buffer definitions, see [securefabric.proto](securefabric.proto).
+This document describes the SecureFabric gRPC API. For protocol buffer
+definitions, see [securefabric.proto](securefabric.proto).
 
 ## Overview
 
-SecureFabric provides a gRPC-based API for secure, low-latency messaging with end-to-end encryption and cryptographic authentication.
+SecureFabric provides a gRPC-based API for secure, low-latency messaging with
+end-to-end encryption and cryptographic authentication.
 
 **Base URL**: Configured per deployment (e.g., `https://api.securefabric.io:50051`)
 
@@ -34,7 +36,9 @@ Send a message to the fabric.
 
 **Response**: `SendResp`
 
-**Description**: Publishes a message envelope to the fabric. The envelope must be properly signed and include a unique nonce. Messages can be sent in plaintext or encrypted end-to-end.
+**Description**: Publishes a message envelope to the fabric. The envelope must
+be properly signed and include a unique nonce. Messages can be sent in
+plaintext or encrypted end-to-end.
 
 **Example Request** (conceptual):
 
@@ -80,7 +84,9 @@ Subscribe to messages on a topic.
 
 **Response**: Stream of `Envelope` messages
 
-**Description**: Opens a streaming connection to receive messages matching the specified topic pattern. The stream remains open until the client closes it or the connection is lost.
+**Description**: Opens a streaming connection to receive messages matching the
+specified topic pattern. The stream remains open until the client closes it or
+the connection is lost.
 
 **Example Request**:
 
@@ -273,10 +279,10 @@ SecureFabric uses standard gRPC status codes:
 ## Security Considerations
 
 1. **TLS Required**: All production deployments must use TLS 1.2+
-2. **Token Security**: Store bearer tokens securely, rotate regularly
-3. **Nonce Uniqueness**: Reusing nonces compromises security
-4. **Signature Verification**: Always verify signatures on receive
-5. **Message Size**: Limit payload sizes to prevent DoS (default: 1MB)
+1. **Token Security**: Store bearer tokens securely, rotate regularly
+1. **Nonce Uniqueness**: Reusing nonces compromises security
+1. **Signature Verification**: Always verify signatures on receive
+1. **Message Size**: Limit payload sizes to prevent DoS (default: 1MB)
 
 ## SDK Support
 
