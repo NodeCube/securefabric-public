@@ -1,204 +1,319 @@
 // SPDX-FileCopyrightText: 2025 NodeCube d.o.o. and contributors
-// SPDX-License-Identifier: Apache-2.0
-
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! SecureFabric Rust SDK
 //!
-//! This library provides a Rust client for the SecureFabric secure messaging fabric.
-//!
-//! # Example
-//!
-//! ```no_run
-//! use securefabric_sdk::{Client, ClientConfig};
-//!
-//! #[tokio::main]
-//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let config = ClientConfig {
-//!         endpoint: "https://api.securefabric.io:50051".to_string(),
-//!         bearer_token: std::env::var("SF_TOKEN")?,
-//!     };
-//!
-//!     let client = Client::connect(config).await?;
-//!
-//!     client.send("my-topic", b"Hello, SecureFabric!").await?;
-//!
-//!     Ok(())
-//! }
-//! ```
+//! Provides high-level client API for publishing and subscribing to SecureFabric nodes.
 
-pub mod proto {
+use anyhow::{Context, Result};
+use ed25519_dalek::{Signer, SigningKey, VerifyingKey};
+use std::path::Path;
+use tonic::transport::{Certificate, Channel, ClientTlsConfig, Identity};
+use tonic::{Request, Streaming};
+
+pub mod pb {
     tonic::include_proto!("securefabric");
 }
 
-use proto::{fabric_node_client::FabricNodeClient, Envelope, SendReq, SubscribeReq};
-use thiserror::Error;
-use tonic::transport::{Channel, ClientTlsConfig};
-use tonic::{Request, Status};
+use pb::fabric_node_client::FabricNodeClient;
+use pb::{Envelope, SendReq, SubscribeReq};
 
-#[derive(Error, Debug)]
-pub enum SdkError {
-    #[error("Connection error: {0}")]
-    Connection(#[from] tonic::transport::Error),
-
-    #[error("gRPC error: {0}")]
-    Grpc(#[from] Status),
-
-    #[error("Configuration error: {0}")]
-    Config(String),
-
-    #[error("Encoding error: {0}")]
-    Encoding(String),
+/// High-level publisher client
+pub struct Publisher {
+    client: FabricNodeClient<Channel>,
+    signing_key: Option<SigningKey>,
+    bearer: Option<String>,
 }
 
-pub type Result<T> = std::result::Result<T, SdkError>;
-
-/// Configuration for SecureFabric client
-#[derive(Clone, Debug)]
-pub struct ClientConfig {
-    /// gRPC endpoint (e.g., "https://api.securefabric.io:50051")
-    pub endpoint: String,
-
-    /// Bearer token for authentication
-    pub bearer_token: String,
-}
-
-/// SecureFabric client
-pub struct Client {
-    inner: FabricNodeClient<Channel>,
-    bearer_token: String,
-}
-
-impl Client {
-    /// Connect to a SecureFabric node
-    pub async fn connect(config: ClientConfig) -> Result<Self> {
-        let tls = ClientTlsConfig::new();
-
-        let channel = Channel::from_shared(config.endpoint.clone())
-            .map_err(|e| SdkError::Config(e.to_string()))?
-            .tls_config(tls)?
+impl Publisher {
+    /// Create a new Publisher connected to the given endpoint
+    pub async fn new(endpoint: impl AsRef<str>) -> Result<Self> {
+        let channel = Channel::from_shared(endpoint.as_ref().to_string())?
             .connect()
-            .await?;
-
-        let inner = FabricNodeClient::new(channel);
+            .await
+            .context("connect to endpoint")?;
 
         Ok(Self {
-            inner,
-            bearer_token: config.bearer_token,
+            client: FabricNodeClient::new(channel),
+            signing_key: None,
+            bearer: None,
         })
     }
 
-    /// Send a message to a topic
-    ///
-    /// # Arguments
-    ///
-    /// * `topic` - The topic to send to
-    /// * `payload` - The message payload
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # use securefabric_sdk::{Client, ClientConfig};
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let config = ClientConfig {
-    /// #     endpoint: "https://api.securefabric.io:50051".to_string(),
-    /// #     bearer_token: "token".to_string(),
-    /// # };
-    /// # let client = Client::connect(config).await?;
-    /// client.send("notifications.alerts", b"Server is down!").await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub async fn send(&self, topic: &str, payload: &[u8]) -> Result<String> {
-        let envelope = self.build_envelope(topic, payload)?;
+    /// Create a Publisher with mTLS
+    pub async fn with_mtls(
+        endpoint: impl AsRef<str>,
+        cert_pem: impl AsRef<[u8]>,
+        key_pem: impl AsRef<[u8]>,
+        ca_pem: impl AsRef<[u8]>,
+    ) -> Result<Self> {
+        let identity = Identity::from_pem(cert_pem.as_ref(), key_pem.as_ref());
+        let ca_cert = Certificate::from_pem(ca_pem.as_ref());
 
-        let mut request = Request::new(SendReq {
-            envelope: Some(envelope.clone()),
-        });
+        let tls = ClientTlsConfig::new()
+            .identity(identity)
+            .ca_certificate(ca_cert);
 
-        self.add_auth_header(&mut request);
+        let channel = Channel::from_shared(endpoint.as_ref().to_string())?
+            .tls_config(tls)?
+            .connect()
+            .await
+            .context("connect with TLS")?;
 
-        let response = self.inner.clone().send(request).await?;
-
-        Ok(envelope.msg_id)
-    }
-
-    /// Subscribe to messages on a topic
-    ///
-    /// Returns a stream of messages
-    pub async fn subscribe(
-        &self,
-        topic: &str,
-    ) -> Result<tonic::Streaming<Envelope>> {
-        let mut request = Request::new(SubscribeReq {
-            topic: topic.as_bytes().to_vec(),
-        });
-
-        self.add_auth_header(&mut request);
-
-        let response = self.inner.clone().subscribe(request).await?;
-
-        Ok(response.into_inner())
-    }
-
-    /// Get node statistics
-    pub async fn stats(&self) -> Result<proto::StatsResp> {
-        let mut request = Request::new(proto::StatsReq {});
-        self.add_auth_header(&mut request);
-
-        let response = self.inner.clone().stats(request).await?;
-
-        Ok(response.into_inner())
-    }
-
-    fn build_envelope(&self, topic: &str, payload: &[u8]) -> Result<Envelope> {
-        // For simplicity, this example creates a minimal envelope
-        // In production, you should:
-        // 1. Generate proper Ed25519 keypair
-        // 2. Sign the message
-        // 3. Use unique nonces
-        // 4. Implement sequence numbers
-
-        let nonce = self.generate_nonce();
-        let seq = 1; // TODO: implement proper sequence tracking
-        let msg_id = self.compute_msg_id(&[], seq, &nonce);
-
-        Ok(Envelope {
-            pubkey: vec![0u8; 32], // TODO: real public key
-            sig: vec![0u8; 64],    // TODO: real signature
-            nonce: nonce.to_vec(),
-            aad: vec![],           // TODO: serialize AAD
-            payload: payload.to_vec(),
-            seq,
-            msg_id,
-            key_version: 0,
-            topic: topic.to_string(),
+        Ok(Self {
+            client: FabricNodeClient::new(channel),
+            signing_key: None,
+            bearer: None,
         })
     }
 
-    fn generate_nonce(&self) -> [u8; 24] {
-        // TODO: Use cryptographically secure RNG
-        let mut nonce = [0u8; 24];
-        getrandom::getrandom(&mut nonce).expect("Failed to generate nonce");
-        nonce
+    /// Set signing key for message signatures
+    pub fn with_signing_key(mut self, key: SigningKey) -> Self {
+        self.signing_key = Some(key);
+        self
     }
 
-    fn compute_msg_id(&self, pubkey: &[u8], seq: u64, nonce: &[u8]) -> String {
-        let mut hasher = blake3::Hasher::new();
-        hasher.update(pubkey);
-        hasher.update(&seq.to_le_bytes());
-        hasher.update(nonce);
-        hex::encode(hasher.finalize().as_bytes())
+    /// Set bearer token for authentication
+    pub fn with_bearer(mut self, token: impl Into<String>) -> Self {
+        self.bearer = Some(token.into());
+        self
     }
 
-    fn add_auth_header<T>(&self, request: &mut Request<T>) {
-        request.metadata_mut().insert(
-            "authorization",
-            format!("Bearer {}", self.bearer_token)
-                .parse()
-                .expect("Invalid bearer token"),
-        );
+    /// Publish a message to a topic
+    pub async fn send(
+        &mut self,
+        topic: impl AsRef<[u8]>,
+        to: impl AsRef<[u8]>,
+        payload: impl AsRef<[u8]>,
+    ) -> Result<()> {
+        let mut req = Request::new(SendReq {
+            topic: topic.as_ref().to_vec(),
+            to: to.as_ref().to_vec(),
+            payload: payload.as_ref().to_vec(),
+        });
+
+        if let Some(bearer) = &self.bearer {
+            req.metadata_mut().insert(
+                "authorization",
+                format!("Bearer {}", bearer).parse().unwrap(),
+            );
+        }
+
+        self.client.send(req).await.context("send message")?;
+        Ok(())
     }
 }
 
-// Re-export commonly used types
-pub use proto::{Envelope, SendResp, StatsResp};
+/// High-level subscriber client
+pub struct Subscriber {
+    client: FabricNodeClient<Channel>,
+    verifying_key: Option<VerifyingKey>,
+    bearer: Option<String>,
+}
+
+impl Subscriber {
+    /// Create a new Subscriber connected to the given endpoint
+    pub async fn new(endpoint: impl AsRef<str>) -> Result<Self> {
+        let channel = Channel::from_shared(endpoint.as_ref().to_string())?
+            .connect()
+            .await
+            .context("connect to endpoint")?;
+
+        Ok(Self {
+            client: FabricNodeClient::new(channel),
+            verifying_key: None,
+            bearer: None,
+        })
+    }
+
+    /// Create a Subscriber with mTLS
+    pub async fn with_mtls(
+        endpoint: impl AsRef<str>,
+        cert_pem: impl AsRef<[u8]>,
+        key_pem: impl AsRef<[u8]>,
+        ca_pem: impl AsRef<[u8]>,
+    ) -> Result<Self> {
+        let identity = Identity::from_pem(cert_pem.as_ref(), key_pem.as_ref());
+        let ca_cert = Certificate::from_pem(ca_pem.as_ref());
+
+        let tls = ClientTlsConfig::new()
+            .identity(identity)
+            .ca_certificate(ca_cert);
+
+        let channel = Channel::from_shared(endpoint.as_ref().to_string())?
+            .tls_config(tls)?
+            .connect()
+            .await
+            .context("connect with TLS")?;
+
+        Ok(Self {
+            client: FabricNodeClient::new(channel),
+            verifying_key: None,
+            bearer: None,
+        })
+    }
+
+    /// Set verifying key for signature verification
+    pub fn with_verifying_key(mut self, key: VerifyingKey) -> Self {
+        self.verifying_key = Some(key);
+        self
+    }
+
+    /// Set bearer token for authentication
+    pub fn with_bearer(mut self, token: impl Into<String>) -> Self {
+        self.bearer = Some(token.into());
+        self
+    }
+
+    /// Subscribe to messages matching a topic pattern
+    pub async fn subscribe(&mut self, topic: impl AsRef<[u8]>) -> Result<Streaming<Envelope>> {
+        let mut req = Request::new(SubscribeReq {
+            topic: topic.as_ref().to_vec(),
+        });
+
+        if let Some(bearer) = &self.bearer {
+            req.metadata_mut().insert(
+                "authorization",
+                format!("Bearer {}", bearer).parse().unwrap(),
+            );
+        }
+
+        let stream = self
+            .client
+            .subscribe(req)
+            .await
+            .context("subscribe to topic")?
+            .into_inner();
+
+        Ok(stream)
+    }
+
+    /// Verify an envelope's signature
+    pub fn verify(&self, envelope: &Envelope) -> Result<bool> {
+        if envelope.sig.is_empty() {
+            return Ok(false);
+        }
+
+        let Some(vk) = &self.verifying_key else {
+            anyhow::bail!("No verifying key configured");
+        };
+
+        let sig = ed25519_dalek::Signature::from_slice(&envelope.sig).context("parse signature")?;
+
+        // Message to verify: topic||0||to||0||payload
+        let mut msg = Vec::new();
+        msg.extend_from_slice(&envelope.topic);
+        msg.push(0);
+        msg.extend_from_slice(&envelope.to);
+        msg.push(0);
+        msg.extend_from_slice(&envelope.payload);
+
+        Ok(vk.verify_strict(&msg, &sig).is_ok())
+    }
+}
+
+/// Crypto helpers
+pub mod crypto {
+    use super::*;
+    use ed25519_dalek::SecretKey;
+    use rand::rngs::OsRng;
+
+    /// Ed25519 keypair
+    pub struct Keypair {
+        pub signing_key: SigningKey,
+        pub verifying_key: VerifyingKey,
+    }
+
+    impl Keypair {
+        /// Generate a new random keypair
+        pub fn generate() -> Self {
+            use rand::RngCore;
+            let mut seed = [0u8; 32];
+            OsRng.fill_bytes(&mut seed);
+            let signing_key = SigningKey::from_bytes(&seed);
+            let verifying_key = signing_key.verifying_key();
+            Self {
+                signing_key,
+                verifying_key,
+            }
+        }
+
+        /// Load keypair from 32-byte seed
+        pub fn from_bytes(bytes: &[u8; 32]) -> Self {
+            let signing_key = SigningKey::from_bytes(bytes);
+            let verifying_key = signing_key.verifying_key();
+            Self {
+                signing_key,
+                verifying_key,
+            }
+        }
+
+        /// Load keypair from file
+        pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
+            let bytes = std::fs::read(path).context("read key file")?;
+            if bytes.len() != 32 {
+                anyhow::bail!("Invalid key file: expected 32 bytes, got {}", bytes.len());
+            }
+            let mut arr = [0u8; 32];
+            arr.copy_from_slice(&bytes);
+            Ok(Self::from_bytes(&arr))
+        }
+    }
+
+    /// Sign a message
+    pub fn sign(signing_key: &SigningKey, message: &[u8]) -> [u8; 64] {
+        signing_key.sign(message).to_bytes()
+    }
+
+    /// Verify a signature
+    pub fn verify(verifying_key: &VerifyingKey, message: &[u8], signature: &[u8]) -> Result<()> {
+        let sig = ed25519_dalek::Signature::from_slice(signature)?;
+        verifying_key
+            .verify_strict(message, &sig)
+            .map_err(|e| anyhow::anyhow!("verification failed: {}", e))
+    }
+}
+
+/// TLS helpers
+pub mod tls {
+    use super::*;
+
+    /// Build an mTLS channel
+    pub async fn mtls_channel(
+        endpoint: impl AsRef<str>,
+        cert_pem: impl AsRef<[u8]>,
+        key_pem: impl AsRef<[u8]>,
+        ca_pem: impl AsRef<[u8]>,
+    ) -> Result<Channel> {
+        let identity = Identity::from_pem(cert_pem.as_ref(), key_pem.as_ref());
+        let ca_cert = Certificate::from_pem(ca_pem.as_ref());
+
+        let tls = ClientTlsConfig::new()
+            .identity(identity)
+            .ca_certificate(ca_cert);
+
+        Channel::from_shared(endpoint.as_ref().to_string())?
+            .tls_config(tls)?
+            .connect()
+            .await
+            .context("connect with TLS")
+    }
+}
+
+/// Authentication helpers
+pub mod auth {
+    use super::*;
+
+    /// Create a bearer token interceptor
+    pub fn bearer_interceptor(
+        token: impl Into<String>,
+    ) -> impl Fn(Request<()>) -> Result<Request<()>, tonic::Status> + Clone {
+        let token = token.into();
+        move |mut req: Request<()>| {
+            req.metadata_mut().insert(
+                "authorization",
+                format!("Bearer {}", token).parse().unwrap(),
+            );
+            Ok(req)
+        }
+    }
+}
