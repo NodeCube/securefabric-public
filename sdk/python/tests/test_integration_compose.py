@@ -11,8 +11,7 @@ COMPOSE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."
 
 
 @pytest.mark.skipif(
-    shutil.which("docker-compose") is None,
-    reason="docker-compose not available"
+    shutil.which("docker-compose") is None, reason="docker-compose not available"
 )
 @pytest.mark.asyncio
 async def test_sdk_against_compose():
