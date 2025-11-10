@@ -2,15 +2,17 @@ SecureFabric Python SDK
 
 Usage
 
-1. Generate gRPC stubs from `proto/securefabric.proto` into this package namespace (recommended location: `sdk/python/securefabric/securefabric_pb2.py` and `_pb2_grpc.py`).
+1. Generate gRPC stubs from `proto/securefabric.proto` into this package
+   namespace (recommended location: `sdk/python/securefabric/securefabric_pb2.py`
+   and `_pb2_grpc.py`).
 
 python -m grpc_tools.protoc -I proto --python_out=sdk/python/securefabric --grpc_python_out=sdk/python/securefabric proto/securefabric.proto
 
-2. Install package
+1. Install package
 
 pip install -e sdk/python/securefabric
 
-3. Example
+1. Example
 
 ```py
 import asyncio

@@ -16,8 +16,11 @@ except Exception:
     Envelope = None
     FabricNodeStub = None
 
+
 class SecureFabricClient:
-    def __init__(self, target: str, tls: Optional[dict] = None, bearer: Optional[str] = None):
+    def __init__(
+        self, target: str, tls: Optional[dict] = None, bearer: Optional[str] = None
+    ):
         """
         Async SecureFabric client.
 
@@ -34,20 +37,33 @@ class SecureFabricClient:
     async def _build_channel(self):
         if self._channel:
             return
-        options = [("grpc.max_receive_message_length",20 *1024 *1024), ("grpc.max_send_message_length",20 *1024 *1024)]
+        options = [
+            ("grpc.max_receive_message_length", 20 * 1024 * 1024),
+            ("grpc.max_send_message_length", 20 * 1024 * 1024),
+        ]
         if self._tls:
             # load credentials
-            creds = grpc.ssl_channel_credentials(root_certificates=self._tls.get("ca_cert"), private_key=self._tls.get("client_key"), certificate_chain=self._tls.get("client_cert"))
+            creds = grpc.ssl_channel_credentials(
+                root_certificates=self._tls.get("ca_cert"),
+                private_key=self._tls.get("client_key"),
+                certificate_chain=self._tls.get("client_cert"),
+            )
             self._channel = aio.secure_channel(self._target, creds, options=options)
         else:
             self._channel = aio.insecure_channel(self._target, options=options)
         # attach metadata interceptor for bearer
         if self._bearer:
-            call_credentials = grpc.metadata_call_credentials(lambda context, callback: callback((("authorization", f"Bearer {self._bearer}"),), None))
+            call_credentials = grpc.metadata_call_credentials(
+                lambda context, callback: callback(
+                    (("authorization", f"Bearer {self._bearer}"),), None
+                )
+            )
             # combine with ssl if secure channel
             if self._tls:
                 composite = grpc.composite_channel_credentials(creds, call_credentials)
-                self._channel = aio.secure_channel(self._target, composite, options=options)
+                self._channel = aio.secure_channel(
+                    self._target, composite, options=options
+                )
         self._stub = FabricNodeStub(self._channel)
 
     async def close(self):
@@ -76,4 +92,5 @@ class SecureFabricClient:
         # Note: Empty() is not imported, this may fail at runtime
         # TODO: Import Empty from securefabric_pb2
         from google.protobuf.empty_pb2 import Empty
+
         return await self._stub.Stats(Empty())
