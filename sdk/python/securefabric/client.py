@@ -75,6 +75,7 @@ class SecureFabricClient:
     async def send(self, topic: bytes, to: bytes, payload: bytes) -> bool:
         """Send a message to `to` under `topic`"""
         await self._build_channel()
+        assert self._stub is not None, "Stub should be initialized after _build_channel"
         req = SendReq(to=to, topic=topic, payload=payload)
         resp = await self._stub.Send(req)
         return getattr(resp, "ok", False)
@@ -82,6 +83,7 @@ class SecureFabricClient:
     async def subscribe(self, topic: bytes) -> AsyncIterator[Envelope]:
         """Subscribe to a topic; yields Envelope messages asynchronously."""
         await self._build_channel()
+        assert self._stub is not None, "Stub should be initialized after _build_channel"
         req = SubscribeReq(topic=topic)
         call = self._stub.Subscribe(req)
         async for env in call:
