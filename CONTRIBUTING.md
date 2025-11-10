@@ -1,6 +1,8 @@
 # Contributing to SecureFabric Public SDKs
 
-Thank you for your interest in contributing to SecureFabric! This document provides guidelines for contributing to the public SDK and documentation repository.
+Thank you for your interest in contributing to SecureFabric! This document
+provides guidelines for contributing to the public SDK and documentation
+repository.
 
 ## Code of Conduct
 
@@ -140,7 +142,8 @@ Changes to protocol specs (`specs/`) require:
 
 ## Licensing
 
-By contributing, you agree that your contributions will be licensed under the Apache-2.0 license. All source files should include:
+By contributing, you agree that your contributions will be licensed under the
+Apache-2.0 license. All source files should include:
 
 ```rust
 // SPDX-FileCopyrightText: 2025 NodeCube d.o.o. and contributors
