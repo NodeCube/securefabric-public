@@ -8,19 +8,18 @@ force-pushing and coordinating with all contributors.
 
 1. Install `git-filter-repo`:
 
-```bash
-# Using pip
-pip install git-filter-repo
+   ```bash
+   # Using pip
+   pip install git-filter-repo
 
-# On macOS with Homebrew
-brew install git-filter-repo
+   # On macOS with Homebrew
+   brew install git-filter-repo
 
-# On Ubuntu/Debian
-apt-get install git-filter-repo
-```
+   # On Ubuntu/Debian
+   apt-get install git-filter-repo
+   ```
 
 2. **IMPORTANT**: Notify all contributors before rewriting history
-
 3. Ensure you have a complete backup of the repository
 
 ## Detection
@@ -140,42 +139,39 @@ git push origin --force --tags
 
 1. **Notify all contributors**
 
-```text
-IMPORTANT: The securefabric-public repository history has been rewritten
-to remove sensitive data. Please follow these steps:
+   ```text
+   IMPORTANT: The securefabric-public repository history has been rewritten
+   to remove sensitive data. Please follow these steps:
 
-1. Delete your local clone: rm -rf securefabric-public
-2. Re-clone the repository: git clone git@github.com:NodeCube/securefabric-public.git
-3. Any open PRs will need to be recreated
+   1. Delete your local clone: rm -rf securefabric-public
+   2. Re-clone the repository: git clone git@github.com:NodeCube/securefabric-public.git
+   3. Any open PRs will need to be recreated
 
-If you have local branches with changes, please contact the maintainers
-for guidance on rebasing your work.
-```
+   If you have local branches with changes, please contact the maintainers
+   for guidance on rebasing your work.
+   ```
 
 2. **Rotate all exposed secrets**
-
    - Regenerate API keys
    - Issue new bearer tokens
    - Replace TLS certificates
    - Update any hardcoded credentials in production
 
 3. **Invalidate old secrets**
-
    - Revoke exposed API keys
    - Disable old tokens
    - Remove old SSH keys
 
 4. **Update protected branch rules**
-
    - Re-apply branch protection after force push
    - Update CI/CD webhooks if needed
 
 5. **Scan again to verify**
 
-```bash
-gitleaks detect --source . --verbose
-trufflehog git file://. --only-verified
-```
+   ```bash
+   gitleaks detect --source . --verbose
+   trufflehog git file://. --only-verified
+   ```
 
 ## Prevention
 
@@ -183,35 +179,34 @@ After sanitization, ensure this never happens again:
 
 1. Add pre-commit hooks
 
-```bash
-# Install pre-commit
-pip install pre-commit
+   ```bash
+   # Install pre-commit
+   pip install pre-commit
 
-# Add .pre-commit-config.yaml
-cat > .pre-commit-config.yaml <<EOF
-repos:
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.0
-    hooks:
-      - id: gitleaks
-EOF
+   # Add .pre-commit-config.yaml
+   cat > .pre-commit-config.yaml <<EOF
+   repos:
+     - repo: https://github.com/gitleaks/gitleaks
+       rev: v8.18.0
+       hooks:
+         - id: gitleaks
+   EOF
 
-pre-commit install
-```
+   pre-commit install
+   ```
 
 2. Enable GitHub secret scanning
-
    - Go to Settings → Code security and analysis
    - Enable secret scanning
    - Enable push protection
 
 3. Use `.env.example` for templates
 
-```bash
-# .env.example
-SF_ENDPOINT=YOUR_ENDPOINT_HERE
-SF_TOKEN=YOUR_TOKEN_HERE
-```
+   ```bash
+   # .env.example
+   SF_ENDPOINT=YOUR_ENDPOINT_HERE
+   SF_TOKEN=YOUR_TOKEN_HERE
+   ```
 
 4. Add comprehensive `.gitignore` (already done in this PR)
 
