@@ -20,6 +20,7 @@ apt-get install git-filter-repo
 ```
 
 2. **IMPORTANT**: Notify all contributors before rewriting history
+
 3. Ensure you have a complete backup of the repository
 
 ## Detection
@@ -152,17 +153,20 @@ for guidance on rebasing your work.
 ```
 
 2. **Rotate all exposed secrets**
+
    - Regenerate API keys
    - Issue new bearer tokens
    - Replace TLS certificates
    - Update any hardcoded credentials in production
 
 3. **Invalidate old secrets**
+
    - Revoke exposed API keys
    - Disable old tokens
    - Remove old SSH keys
 
 4. **Update protected branch rules**
+
    - Re-apply branch protection after force push
    - Update CI/CD webhooks if needed
 
@@ -196,6 +200,7 @@ pre-commit install
 ```
 
 2. Enable GitHub secret scanning
+
    - Go to Settings → Code security and analysis
    - Enable secret scanning
    - Enable push protection
