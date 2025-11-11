@@ -1,6 +1,7 @@
 # SecureFabric Architecture Overview
 
-This document explains the architecture of SecureFabric, the relationship between the public SDK repository and the private node implementation, and how protocol releases flow between them.
+This document explains the architecture of SecureFabric, the relationship between the public SDK
+repository and the private node implementation, and how protocol releases flow between them.
 
 ## Repository Split: Public vs. Private
 
