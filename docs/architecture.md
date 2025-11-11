@@ -31,7 +31,7 @@ Communication uses gRPC with Protocol Buffers for serialization:
 
 Each message includes:
 
-```
+```protobuf
 Envelope {
   pubkey: bytes        // Ed25519 public key (32 bytes)
   sig: bytes           // Ed25519 signature (64 bytes)

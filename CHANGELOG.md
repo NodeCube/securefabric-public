@@ -8,12 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+
 - Comprehensive security hardening of public repository
 - Added automated secret scanning with gitleaks and trufflehog
 - Added dependency vulnerability scanning
 - Removed any sensitive artifacts from history
 
 ### Added
+
 - CODE_OF_CONDUCT.md with Contributor Covenant 2.1
 - CHANGELOG.md for tracking changes
 - Comprehensive .gitignore for secrets and build artifacts
@@ -23,18 +25,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public audit CI job to prevent sensitive data commits
 
 ### Changed
+
 - Updated all contact emails to public addresses (secure-fabric.io domain)
 - Minimized examples to use placeholder credentials only
 - Streamlined CI pipeline for faster execution (<5 min target)
 - Updated documentation to remove internal references
 
 ### Removed
+
 - Any internal endpoints, credentials, or proprietary code
 - Build artifacts and generated code from repository
 
 ## [0.1.0] - 2025-01-11
 
 ### Added
+
 - Initial public release of SDKs (Rust, JavaScript/TypeScript, Python)
 - Protocol specifications (Protocol Buffers schema)
 - API documentation and examples

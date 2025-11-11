@@ -41,7 +41,7 @@ git log -p | grep -E "(password|secret|token|api[_-]?key|bearer)"
 
 Create a `patterns.txt` file with sensitive patterns:
 
-```
+```text
 # API Keys
 AKIA[0-9A-Z]{16}
 [0-9a-zA-Z]{32,}
@@ -137,9 +137,9 @@ git push origin --force --tags
 
 ## Post-Sanitization Steps
 
-1. **Notify all contributors**:
+1. **Notify all contributors**
 
-```
+```text
 IMPORTANT: The securefabric-public repository history has been rewritten
 to remove sensitive data. Please follow these steps:
 
@@ -151,22 +151,22 @@ If you have local branches with changes, please contact the maintainers
 for guidance on rebasing your work.
 ```
 
-2. **Rotate all exposed secrets**:
+2. **Rotate all exposed secrets**
    - Regenerate API keys
    - Issue new bearer tokens
    - Replace TLS certificates
    - Update any hardcoded credentials in production
 
-3. **Invalidate old secrets**:
+3. **Invalidate old secrets**
    - Revoke exposed API keys
    - Disable old tokens
    - Remove old SSH keys
 
-4. **Update protected branch rules**:
+4. **Update protected branch rules**
    - Re-apply branch protection after force push
    - Update CI/CD webhooks if needed
 
-5. **Scan again to verify**:
+5. **Scan again to verify**
 
 ```bash
 gitleaks detect --source . --verbose
@@ -177,7 +177,7 @@ trufflehog git file://. --only-verified
 
 After sanitization, ensure this never happens again:
 
-1. Add pre-commit hooks:
+1. Add pre-commit hooks
 
 ```bash
 # Install pre-commit
@@ -195,12 +195,12 @@ EOF
 pre-commit install
 ```
 
-2. Enable GitHub secret scanning:
+2. Enable GitHub secret scanning
    - Go to Settings → Code security and analysis
    - Enable secret scanning
    - Enable push protection
 
-3. Use `.env.example` for templates:
+3. Use `.env.example` for templates
 
 ```bash
 # .env.example
@@ -215,11 +215,11 @@ SF_TOKEN=YOUR_TOKEN_HERE
 If you discover exposed secrets in the wild:
 
 - Security team: [security@secure-fabric.io](mailto:security@secure-fabric.io)
-- GitHub Security Advisory: https://github.com/NodeCube/securefabric-public/security/advisories/new
+- GitHub Security Advisory: <https://github.com/NodeCube/securefabric-public/security/advisories/new>
 
 ## References
 
-- git-filter-repo documentation: https://github.com/newren/git-filter-repo
-- GitHub: Removing sensitive data: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository
-- gitleaks: https://github.com/gitleaks/gitleaks
-- trufflehog: https://github.com/trufflesecurity/trufflehog
+- git-filter-repo documentation: <https://github.com/newren/git-filter-repo>
+- GitHub: Removing sensitive data: <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository>
+- gitleaks: <https://github.com/gitleaks/gitleaks>
+- trufflehog: <https://github.com/trufflesecurity/trufflehog>

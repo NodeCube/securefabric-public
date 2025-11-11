@@ -201,7 +201,7 @@ All codegen is automated via `tools/sync-proto.sh`.
 
 ## Issue Routing: Where to File Issues
 
-### File Issues in Public Repo (This Repo) For:
+### File Issues in Public Repo (This Repo) For
 
 - SDK bugs or feature requests
 - Client library performance issues
@@ -210,7 +210,7 @@ All codegen is automated via `tools/sync-proto.sh`.
 - Example application problems
 - Build/CI issues with SDKs
 
-### Contact Private Repo Team For:
+### Contact Private Repo Team For
 
 - Node/server bugs or crashes
 - Authentication/authorization issues
