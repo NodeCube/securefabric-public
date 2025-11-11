@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: Apache-2.0
+# This workflow runs in the PRIVATE repository to publish protocol artifacts
+
+name: Sync Protocol to Public
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Protocol version to release (e.g., v0.2.0)'
+        required: true
+        type: string
+
+jobs:
+  publish-protocol:
+    name: Publish Protocol Artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Publishing protocol version: ${VERSION}"
+
+      - name: Extract protocol changelog
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Extract the section for this version from CHANGELOG.md
+          sed -n "/## \[${VERSION#v}\]/,/## \[/p" CHANGELOG.md | sed '$d' > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "## Protocol Release ${VERSION}" > release-notes.md
+            echo "" >> release-notes.md
+            echo "Protocol specification update." >> release-notes.md
+          fi
+          cat release-notes.md
+
+      - name: Package protocol artifacts
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p artifacts
+
+          # Copy protocol files
+          cp -r proto artifacts/ || mkdir -p artifacts/proto
+          cp specs/securefabric.proto artifacts/proto/ || true
+
+          # Copy schemas if they exist
+          if [ -d "specs/schemas" ]; then
+            cp -r specs/schemas artifacts/
+          fi
+
+          # Copy relevant CHANGELOG section
+          cp release-notes.md artifacts/CHANGELOG-${VERSION}.md
+
+          # Create tarball
+          cd artifacts
+          tar czf ../securefabric-proto-${VERSION}.tar.gz .
+          cd ..
+
+          # Create checksums
+          sha256sum securefabric-proto-${VERSION}.tar.gz > securefabric-proto-${VERSION}.tar.gz.sha256
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Protocol ${{ steps.version.outputs.version }}
+          body_path: release-notes.md
+          files: |
+            securefabric-proto-${{ steps.version.outputs.version }}.tar.gz
+            securefabric-proto-${{ steps.version.outputs.version }}.tar.gz.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger public repo sync
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Dispatch to public repo to pull these artifacts
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.PUBLIC_REPO_DISPATCH_TOKEN }}" \
+            https://api.github.com/repos/NodeCube/securefabric-public/dispatches \
+            -d "{\"event_type\":\"securefabric_proto_release\",\"client_payload\":{\"version\":\"${VERSION}\",\"private_repo\":\"${{ github.repository }}\"}}"

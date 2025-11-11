@@ -4,6 +4,30 @@ Thank you for your interest in contributing to SecureFabric! This document
 provides guidelines for contributing to the public SDK and documentation
 repository.
 
+## Repository Scope & Contribution Policy
+
+**IMPORTANT:** This repository is for SDKs and protocol specifications ONLY.
+
+### What You CAN Contribute:
+
+- Client SDK improvements (Rust, JavaScript/TypeScript, Python)
+- Protocol specification updates and clarifications
+- Documentation, examples, and guides
+- Bug fixes in client libraries
+- New language SDK implementations
+- Test coverage and conformance tests
+
+### What You CANNOT Contribute:
+
+- Server/node implementation changes (not in this repo)
+- Infrastructure, deployment, or operational code
+- Changes to private/proprietary components
+- Production credentials, keys, or certificates
+
+**Pull requests attempting to add server code, infrastructure configs, or
+deployment tooling will be rejected.** For questions about node implementation
+or architecture, please contact the maintainers directly.
+
 ## Code of Conduct
 
 This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
@@ -140,6 +164,14 @@ Changes to protocol specs (`specs/`) require:
 - Backward compatibility analysis
 - Update to all affected SDKs
 - Version bump in proto file
+- Entry in CHANGELOG.md explaining the change
+
+**Breaking Changes:** Any breaking protocol changes must:
+
+1. Increment the major version number
+2. Document migration path in CHANGELOG.md
+3. Update all SDK implementations
+4. Provide backward compatibility guidance
 
 ## Licensing
 

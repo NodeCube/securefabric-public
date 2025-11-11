@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Code owners for SecureFabric Public SDKs & Specs
+
+# Default owners for everything in the repo
+* @NodeCube/securefabric-maintainers
+
+# Protocol specifications - require protocol team review
+/specs/** @NodeCube/securefabric-protocol
+
+# SDK implementations - require SDK team review
+/sdk/** @NodeCube/securefabric-sdk
+
+# Rust SDK
+/sdk/rust/** @NodeCube/securefabric-rust
+
+# JavaScript/TypeScript SDK
+/sdk/js/** @NodeCube/securefabric-js
+
+# Python SDK
+/sdk/python/** @NodeCube/securefabric-python
+
+# Documentation - require docs team review
+/docs/** @NodeCube/securefabric-docs
+README.md @NodeCube/securefabric-docs
+CONTRIBUTING.md @NodeCube/securefabric-docs
+
+# Tooling and CI
+/tools/** @NodeCube/securefabric-tools
+/.github/** @NodeCube/securefabric-tools
+
+# Security-sensitive files
+SECURITY.md @NodeCube/securefabric-security
+LICENSE @NodeCube/securefabric-legal

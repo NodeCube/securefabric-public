@@ -7,8 +7,26 @@
 [ci-link]: https://github.com/NodeCube/securefabric-public/actions/workflows/ci.yml
 
 SecureFabric is a secure, low-latency messaging fabric designed for verified
-senders and end-to-end confidentiality. This public repo hosts SDKs, examples,
-and protocol specs. The production node is available separately.
+senders and end-to-end confidentiality.
+
+## Repository Scope
+
+**This public repository contains ONLY:**
+
+- Client SDKs (Rust, JavaScript/TypeScript, Python)
+- Protocol specifications (protobuf, API docs)
+- Example applications and documentation
+- Tools for SDK development and testing
+
+**This repository does NOT contain:**
+
+- SecureFabric node/server implementation (maintained privately)
+- Infrastructure code, deployment configs, or operational tooling
+- Production keys, certificates, or credentials
+
+For node implementation, architecture decisions, or operational questions,
+please refer to the private repository. This separation ensures the open-source
+client libraries and protocol remain independent from proprietary server code.
 
 ## What's here
 
@@ -44,11 +62,12 @@ pip install -r requirements.txt
 SF_ENDPOINT=YOUR_ENDPOINT_HERE SF_TOKEN=YOUR_TOKEN_HERE python send_receive.py
 ```
 
-## Protocol
+## Protocol & Architecture
 
-- **Architecture**: [docs/architecture.md](docs/architecture.md)
+- **Architecture Overview**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Repository structure and protocol sync flow
+- **Technical Architecture**: [docs/architecture.md](docs/architecture.md)
 - **Quickstart**: [docs/quickstart.md](docs/quickstart.md)
-- **Messages**: [specs/securefabric.proto](specs/securefabric.proto)
+- **Protocol Spec**: [specs/securefabric.proto](specs/securefabric.proto)
 - **API Reference**: [specs/api.md](specs/api.md)
 
 ## Using the SDKs in Your Project
