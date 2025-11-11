@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Simple gRPC-web client using @improbable-eng/grpc-web or grpc-web generated client.
 // This is a placeholder showing how to call the node using fetch and gRPC-web framing.
 

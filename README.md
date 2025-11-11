@@ -8,42 +8,46 @@
 
 SecureFabric is a secure, low-latency messaging fabric designed for verified
 senders and end-to-end confidentiality. This public repo hosts SDKs, examples,
-and protocol specs. The production node is available as a signed binary under
-a commercial license.
+and protocol specs. The production node is available separately.
 
 ## What's here
 
-- **SDKs**: Rust, JS/TS, Python
+- **SDKs**: Rust, JS/TS, Python client libraries
 - **Specs**: Protocol overview, `.proto`, API docs
 - **Examples**: Minimal send/receive apps per language
 - **Docs**: Quickstart, architecture
 
-## Quickstart (Rust)
+## Quickstart
+
+All examples use placeholder credentials. Replace with your actual endpoint and token.
+
+### Rust
 
 ```bash
 cd examples/rust
-cargo run --bin demo -- --endpoint https://api.securefabric.io --token $SF_TOKEN
+cargo run --bin demo -- --endpoint YOUR_ENDPOINT_HERE --token YOUR_TOKEN_HERE
 ```
 
-## Quickstart (JS/TS)
+### JavaScript/TypeScript
 
 ```bash
 cd examples/js
 npm install
-SF_TOKEN=your-token node index.js
+SF_ENDPOINT=YOUR_ENDPOINT_HERE SF_TOKEN=YOUR_TOKEN_HERE node index.js
 ```
 
-## Quickstart (Python)
+### Python
 
 ```bash
 cd examples/python
 pip install -r requirements.txt
-SF_TOKEN=your-token python send_receive.py
+SF_ENDPOINT=YOUR_ENDPOINT_HERE SF_TOKEN=YOUR_TOKEN_HERE python send_receive.py
 ```
 
 ## Protocol
 
-- **Overview**: [docs/architecture.md](docs/architecture.md)
+- **Architecture**: [docs/architecture.md](docs/architecture.md)
+- **Quickstart**: [docs/quickstart.md](docs/quickstart.md)
 - **Messages**: [specs/securefabric.proto](specs/securefabric.proto)
 - **API Reference**: [specs/api.md](specs/api.md)
 
@@ -70,20 +74,17 @@ npm install @securefabric/sdk
 pip install securefabric-sdk
 ```
 
-## Running your own node
+## Trademark Notice
 
-The production-grade node is distributed as a signed binary:
+"SecureFabric" is a trademark. This repository contains only the public SDK
+and protocol specifications. The production SecureFabric node is a separate
+product with its own licensing.
 
-1. Download from [SecureFabric Releases](https://github.com/NodeCube/securefabric-core/releases)
-1. Verify signature with `tools/verify-release-signature.sh`
-1. Follow deployment guide in the private repository documentation
+## Support & Contact
 
-## Commercial node & hosting
-
-To join the private beta or request support:
-
-- Website: [https://securefabric.io](https://securefabric.io)
-- Email: [legal@nodecube.io](mailto:legal@nodecube.io)
+- Website: [https://secure-fabric.io](https://secure-fabric.io)
+- Documentation: [https://secure-fabric.io/docs](https://secure-fabric.io/docs)
+- Email: [contact@secure-fabric.io](mailto:contact@secure-fabric.io)
 
 ## Contributing
 
@@ -91,8 +92,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). By contributing you agree to the Apache-
 
 ## Security
 
-Please report vulnerabilities via [SECURITY.md](SECURITY.md).
+Please report vulnerabilities via [SECURITY.md](SECURITY.md) or email
+[security@secure-fabric.io](mailto:security@secure-fabric.io).
 
 ## License
 
 This repository is licensed under [Apache-2.0](LICENSE).
+
+The SecureFabric production node (distributed separately) may have different
+licensing terms. This repository contains only the open-source SDK and protocol
+specifications.

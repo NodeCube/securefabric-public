@@ -5,7 +5,7 @@
 If you discover a security vulnerability in SecureFabric SDKs or protocol specifications, please report it responsibly:
 
 1. **DO NOT** open a public GitHub issue
-2. Email us at [security@nodecube.io](mailto:security@nodecube.io)
+2. Email us at [security@secure-fabric.io](mailto:security@secure-fabric.io)
 3. Use GitHub's private security advisory feature
 4. Include detailed information:
    - Description of the vulnerability

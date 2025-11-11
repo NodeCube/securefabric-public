@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2025 NodeCube d.o.o. and contributors
 # SPDX-License-Identifier: Apache-2.0
+
+#!/usr/bin/env python3
 
 """
 SecureFabric Python SDK Example
