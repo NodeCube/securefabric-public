@@ -295,7 +295,11 @@ jobs:
         run: |
           MISSING=0
           # Exclude generated protobuf files from SPDX check
-          for file in $(find sdk/ examples/ specs/ -name "*.rs" -o -name "*.py" -o -name "*.proto" -type f ! -path "*/target/*" ! -path "*/__pycache__/*" ! -path "*/node_modules/*" ! -name "*_pb2.py" ! -name "*_pb2_grpc.py" ! -name "*_pb2.pyi"); do
+          for file in $(find sdk/ examples/ specs/ \( -name "*.rs" -o -name "*.py" -o -name "*.proto" \) -type f ! -path "*/target/*" ! -path "*/__pycache__/*" ! -path "*/node_modules/*"); do
+            # Skip generated protobuf files
+            if echo "$file" | grep -qE '(_pb2\.py|_pb2_grpc\.py|_pb2\.pyi)$'; then
+              continue
+            fi
             if [ -f "$file" ] && ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
               echo "Missing SPDX: $file"
               MISSING=1
