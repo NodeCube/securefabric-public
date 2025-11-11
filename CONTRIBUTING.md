@@ -6,7 +6,8 @@ repository.
 
 ## Code of Conduct
 
-This project adheres to a Code of Conduct. By participating, you agree to uphold a respectful and inclusive environment.
+This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
+By participating, you agree to uphold a respectful and inclusive environment.
 
 ## How to Contribute
 
@@ -143,16 +144,21 @@ Changes to protocol specs (`specs/`) require:
 ## Licensing
 
 By contributing, you agree that your contributions will be licensed under the
-Apache-2.0 license. All source files should include:
+Apache-2.0 license. All source files should include SPDX headers:
 
 ```rust
-// SPDX-FileCopyrightText: 2025 NodeCube d.o.o. and contributors
 // SPDX-License-Identifier: Apache-2.0
+```
+
+Or for Python/shell scripts:
+
+```python
+# SPDX-License-Identifier: Apache-2.0
 ```
 
 ## Questions?
 
-- Open a discussion on GitHub
-- Email: [legal@nodecube.io](mailto:legal@nodecube.io)
+- Open a discussion on GitHub Discussions
+- Email: [contact@secure-fabric.io](mailto:contact@secure-fabric.io)
 
 Thank you for contributing to SecureFabric!

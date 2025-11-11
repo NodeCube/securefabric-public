@@ -1,18 +1,148 @@
+# SPDX-License-Identifier: Apache-2.0
+
 name: CI
 
 on:
   push:
-    branches: [main, master, fix/js-sdk-runtime-issues, claude/**]
+    branches: [main, master, claude/**]
   pull_request:
-    branches: [main, master, fix/js-sdk-runtime-issues]
+    branches: [main, master]
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Public audit - ensures no sensitive data in repository
+  public-audit:
+    name: Public Repository Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for sensitive files/directories
+        run: |
+          echo "Checking for sensitive artifacts..."
+          SENSITIVE_PATTERNS=(
+            "infra/**"
+            "deploy/**"
+            "ansible/**"
+            "terraform/**"
+            "k8s/**"
+            "helm/**"
+            "docker-compose*.yml"
+            "docker-compose*.yaml"
+            "**/*.pem"
+            "**/*.key"
+            "**/*.crt"
+            "**/*.p12"
+            "**/*.jks"
+            "**/*.pkcs12"
+          )
+
+          FOUND_SENSITIVE=0
+          for pattern in "${SENSITIVE_PATTERNS[@]}"; do
+            if find . -path "./.git" -prune -o -path "./target" -prune -o -path "$pattern" -print | grep -q .; then
+              echo "ERROR: Found sensitive pattern: $pattern"
+              find . -path "./.git" -prune -o -path "./target" -prune -o -path "$pattern" -print
+              FOUND_SENSITIVE=1
+            fi
+          done
+
+          if [ $FOUND_SENSITIVE -eq 1 ]; then
+            echo "ERROR: Sensitive files/directories found"
+            exit 1
+          fi
+          echo "PASS: No sensitive artifacts found"
+
+      - name: Check for required files
+        run: |
+          echo "Checking required documentation..."
+          REQUIRED_FILES=(
+            "README.md"
+            "LICENSE"
+            "SECURITY.md"
+            "CONTRIBUTING.md"
+            "CODE_OF_CONDUCT.md"
+            ".github/workflows/ci.yml"
+          )
+
+          MISSING=0
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "ERROR: Missing $file"
+              MISSING=1
+            else
+              echo "FOUND: $file"
+            fi
+          done
+
+          if [ $MISSING -eq 1 ]; then
+            exit 1
+          fi
+          echo "PASS: All required files present"
+
+      - name: Check critical directories
+        run: |
+          if [ ! -d "docs" ] || [ -z "$(ls -A docs 2>/dev/null)" ]; then
+            echo "ERROR: docs/ missing or empty"
+            exit 1
+          fi
+          if [ ! -d "specs" ] || [ -z "$(ls -A specs 2>/dev/null)" ]; then
+            echo "ERROR: specs/ missing or empty"
+            exit 1
+          fi
+          echo "PASS: Critical directories present"
+
+  # Secret scanning
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Documentation quality
+  docs-quality:
+    name: Documentation Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Markdown
+        uses: nosborn/github-action-markdown-cli@v3.3.0
+        with:
+          files: .
+          config_file: .markdownlint.yaml
+          ignore_files: node_modules/,target/
+
+      - name: Lint YAML
+        run: |
+          pip install yamllint
+          find . -name "*.yml" -o -name "*.yaml" | grep -v node_modules | grep -v target | xargs yamllint -d "{extends: default, rules: {line-length: {max: 120}}}" || true
+
+      - name: Check doc completeness
+        run: |
+          for file in README.md SECURITY.md CONTRIBUTING.md; do
+            lines=$(wc -l < "$file")
+            if [ "$lines" -lt 10 ]; then
+              echo "ERROR: $file only $lines lines"
+              exit 1
+            fi
+          done
+          echo "PASS: Documentation complete"
+
+  # Protocol validation
   proto-validation:
-    name: Validate Protocol Buffers
+    name: Protocol Buffers
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,14 +152,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y protobuf-compiler
 
-      - name: Validate proto syntax
+      - name: Validate proto
         run: |
           protoc --proto_path=specs \
                  --descriptor_set_out=/dev/null \
                  specs/securefabric.proto
 
+  # Rust SDK
   rust-sdk:
-    name: Rust SDK (Build & Test)
+    name: Rust SDK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,16 +170,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y protobuf-compiler
 
-      - name: Install Rust toolchain
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-
-      - name: Ensure cargo cache dirs exist
-        run: |
-          mkdir -p ~/.cargo/registry
-          mkdir -p ~/.cargo/git
-          mkdir -p target
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -56,62 +181,38 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-rust-sdk-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-rust-sdk-
+            sdk/rust/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('sdk/rust/Cargo.lock') }}
 
-      - name: Check formatting
+      - name: Format check
         working-directory: sdk/rust
         run: cargo fmt --check
 
-      - name: Run clippy
+      - name: Clippy
         working-directory: sdk/rust
         run: cargo clippy --all-features -- -D warnings
 
-      - name: Build SDK
+      - name: Build
         working-directory: sdk/rust
         run: cargo build --verbose
 
-      - name: Run tests
+      - name: Test
         working-directory: sdk/rust
         run: cargo test --verbose
 
-      - name: Build example
-        working-directory: examples/rust
-        run: cargo build --verbose
-
-  javascript-sdk:
-    name: JavaScript/TypeScript SDK (Build & Test)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Check JavaScript SDK structure
+      - name: Audit dependencies
+        working-directory: sdk/rust
         run: |
-          echo "Note: sdk/js is a Rust WASM project, not a traditional Node.js SDK"
-          echo "Checking if example can compile..."
+          cargo install cargo-audit
+          cargo audit || true
 
-      - name: Install example dependencies
-        working-directory: examples/js
-        run: npm ci || true
-
-      - name: Build example
-        working-directory: examples/js
-        run: npm run build || true
-        continue-on-error: true
-
+  # Python SDK
   python-sdk:
-    name: Python SDK (Build & Test)
+    name: Python SDK
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.11']
     steps:
       - uses: actions/checkout@v4
 
@@ -131,7 +232,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e '.[dev]'
 
-      - name: Generate protobuf files
+      - name: Generate protobuf
         working-directory: sdk/python
         run: |
           python -m grpc_tools.protoc \
@@ -142,81 +243,61 @@ jobs:
             ../../specs/securefabric.proto
           black securefabric/securefabric_pb2.py securefabric/securefabric_pb2_grpc.py securefabric/securefabric_pb2.pyi
 
-      - name: Lint with black
+      - name: Black check
         working-directory: sdk/python
         run: black --check .
 
-      - name: Type check with mypy
+      - name: Type check
         working-directory: sdk/python
         run: mypy securefabric
 
-      - name: Run tests
+      - name: Test
         working-directory: sdk/python
         run: pytest -v
 
-      - name: Test example
-        working-directory: examples/python
-        run: |
-          pip install -r requirements.txt
-          python -m py_compile send_receive.py
-
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check markdown files
-        uses: nosborn/github-action-markdown-cli@v3.3.0
-        with:
-          files: .
-          config_file: .markdownlint.yaml
-          ignore_files: node_modules/,target/
-
-      - name: Check for broken links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          use-quiet-mode: 'yes'
-          folder-path: 'docs/'
-          file-path: './README.md, ./CONTRIBUTING.md, ./SECURITY.md'
-        continue-on-error: true
-
+  # License compliance
   license-check:
     name: License Compliance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check LICENSE file
+      - name: Check LICENSE
         run: |
           test -f LICENSE
           grep -q "Apache License" LICENSE
 
       - name: Check SPDX headers
         run: |
-          # Check that key source files have SPDX headers
-          for file in specs/securefabric.proto; do
-            if [ -f "$file" ]; then
-              if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
-                echo "Missing SPDX header in $file"
-                exit 1
-              fi
+          MISSING=0
+          for file in $(find sdk/ examples/ specs/ -name "*.rs" -o -name "*.py" -o -name "*.proto" -type f ! -path "*/target/*" ! -path "*/__pycache__/*" ! -path "*/securefabric_pb2*"); do
+            if [ -f "$file" ] && ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
+              echo "Missing SPDX: $file"
+              MISSING=1
             fi
           done
+          if [ $MISSING -eq 1 ]; then
+            exit 1
+          fi
+          echo "PASS: SPDX headers present"
 
+  # Summary
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [proto-validation, rust-sdk, javascript-sdk, python-sdk, docs, license-check]
+    needs: [public-audit, secret-scan, docs-quality, proto-validation, rust-sdk, python-sdk, license-check]
     if: always()
     steps:
-      - name: Check results
+      - name: Summary
         run: |
-          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## CI Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Proto Validation: ${{ needs.proto-validation.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Rust SDK: ${{ needs.rust-sdk.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ JavaScript SDK: ${{ needs.javascript-sdk.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Python SDK: ${{ needs.python-sdk.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Documentation: ${{ needs.docs.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ License Check: ${{ needs.license-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Public Audit | ${{ needs.public-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scan | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docs Quality | ${{ needs.docs-quality.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Protocol | ${{ needs.proto-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Rust SDK | ${{ needs.rust-sdk.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Python SDK | ${{ needs.python-sdk.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| License | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY

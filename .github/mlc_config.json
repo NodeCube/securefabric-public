@@ -1,0 +1,16 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https://secure-fabric\\.io"
+    },
+    {
+      "pattern": "^mailto:"
+    },
+    {
+      "pattern": "^YOUR_"
+    }
+  ],
+  "timeout": "10s",
+  "retryOn429": true,
+  "aliveStatusCodes": [200, 206, 429]
+}

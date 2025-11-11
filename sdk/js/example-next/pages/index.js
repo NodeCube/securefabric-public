@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import React, { useState, useEffect } from 'react';
 import init, { encrypt, decrypt } from 'securefabric-js';
 import { sendMessage } from '../js/send_client';
