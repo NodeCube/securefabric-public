@@ -1,0 +1,111 @@
+name: Bug Report
+description: Report a bug in SecureFabric SDKs or protocol specs
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+
+        **Note:** This repository is for SDK and protocol bugs only.
+        For node/server issues, please contact support directly.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component is affected?
+      options:
+        - Rust SDK
+        - JavaScript/TypeScript SDK
+        - Python SDK
+        - Protocol Specifications
+        - Documentation
+        - Examples
+        - Build/CI Tools
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Which version are you using?
+      placeholder: "e.g., 0.1.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear description of what the bug is
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the issue
+      placeholder: |
+        1. Import SDK '...'
+        2. Call method '...'
+        3. Observe error '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Error Messages
+      description: Include any relevant logs or error output
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: System and runtime information
+      placeholder: |
+        - OS: [e.g., Ubuntu 22.04, macOS 13, Windows 11]
+        - Runtime: [e.g., Rust 1.75, Node 20, Python 3.11]
+        - SDK Version: [e.g., 0.1.0]
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched existing issues to avoid duplicates
+          required: true
+        - label: This issue relates to SDK/protocol, not node/server
+          required: true
+        - label: I have provided version and environment information
+          required: true

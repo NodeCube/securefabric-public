@@ -296,11 +296,59 @@ jobs:
           fi
           echo "PASS: SPDX headers present"
 
+  # Conformance tests
+  conformance-tests:
+    name: SDK Conformance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check test vectors exist
+        run: |
+          if [ ! -f "sdk/tests/test_vectors.json" ]; then
+            echo "❌ ERROR: Test vectors not found"
+            exit 1
+          fi
+          echo "✅ Test vectors found"
+
+      - name: Validate test vectors JSON
+        run: |
+          python3 -c "import json; json.load(open('sdk/tests/test_vectors.json'))"
+          echo "✅ Test vectors are valid JSON"
+
+  # Changelog validation
+  changelog-check:
+    name: Changelog Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if specs changed
+        id: specs_changed
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "^specs/"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check changelog updated
+        if: steps.specs_changed.outputs.changed == 'true'
+        run: |
+          if ! git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "CHANGELOG.md"; then
+            echo "❌ ERROR: specs/ changed but CHANGELOG.md not updated"
+            exit 1
+          fi
+          echo "✅ CHANGELOG.md updated"
+
   # Summary
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [public-audit, secret-scan, docs-quality, proto-validation, rust-sdk, python-sdk, license-check]
+    needs: [public-audit, secret-scan, docs-quality, proto-validation, rust-sdk, python-sdk, conformance-tests, changelog-check, license-check]
     if: always()
     steps:
       - name: Summary
@@ -315,4 +363,6 @@ jobs:
           echo "| Protocol | ${{ needs.proto-validation.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Rust SDK | ${{ needs.rust-sdk.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Python SDK | ${{ needs.python-sdk.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Conformance | ${{ needs.conformance-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Changelog | ${{ needs.changelog-check.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| License | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY

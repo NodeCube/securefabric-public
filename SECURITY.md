@@ -1,5 +1,14 @@
 # Security Policy
 
+## Repository Scope
+
+This security policy applies to the **public SDK and protocol repository only**.
+
+- For SDK vulnerabilities (client libraries, protocol specs), report here
+- For node/server vulnerabilities, contact security@secure-fabric.io directly
+
+This repository does not contain server implementation code.
+
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in SecureFabric SDKs or protocol specifications, please report it responsibly:

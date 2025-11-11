@@ -1,0 +1,103 @@
+name: Feature Request
+description: Suggest a new feature for SecureFabric SDKs or protocol
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature!
+
+        **Note:** This repository is for SDK and protocol features only.
+        For node/server features, please contact us directly.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component would this enhance?
+      options:
+        - Rust SDK
+        - JavaScript/TypeScript SDK
+        - Python SDK
+        - Protocol Specifications
+        - Documentation
+        - Examples
+        - Build/CI Tools
+        - New Language SDK
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: I'm frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this to work?
+      placeholder: Describe your ideal solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other solutions have you considered?
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Usage Examples
+      description: Show how the feature would be used
+      placeholder: |
+        ```rust
+        // Example usage
+        client.new_feature().await?;
+        ```
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking Change?
+      description: Would this require breaking changes?
+      options:
+        - "No - Backward compatible"
+        - "Yes - Breaking change"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Who would benefit from this feature?
+      placeholder: |
+        - SDK users who need...
+        - Applications that require...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or references
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched existing issues to avoid duplicates
+          required: true
+        - label: This feature relates to SDK/protocol, not node/server
+          required: true
+        - label: I have considered backward compatibility
+          required: true

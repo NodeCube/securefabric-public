@@ -1,0 +1,195 @@
+# SPDX-License-Identifier: Apache-2.0
+# This workflow runs in the PUBLIC repository to pull protocol updates
+
+name: Pull Protocol Updates
+
+on:
+  repository_dispatch:
+    types: [securefabric_proto_release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Protocol version to pull (e.g., v0.2.0)'
+        required: true
+        type: string
+      private_repo:
+        description: 'Private repository (e.g., NodeCube/securefabric-private)'
+        required: false
+        default: 'NodeCube/securefabric-private'
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  pull-protocol:
+    name: Pull and Integrate Protocol
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine version and source
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            PRIVATE_REPO="${{ inputs.private_repo }}"
+          else
+            VERSION="${{ github.event.client_payload.version }}"
+            PRIVATE_REPO="${{ github.event.client_payload.private_repo }}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "private_repo=${PRIVATE_REPO}" >> $GITHUB_OUTPUT
+          echo "branch=chore/sync-protocol-${VERSION}" >> $GITHUB_OUTPUT
+          echo "Pulling protocol ${VERSION} from ${PRIVATE_REPO}"
+
+      - name: Download protocol artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_REPO_READ_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PRIVATE_REPO="${{ steps.version.outputs.private_repo }}"
+
+          # Download the release artifacts
+          RELEASE_URL="https://api.github.com/repos/${PRIVATE_REPO}/releases/tags/${VERSION}"
+          ARTIFACT_URL=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" ${RELEASE_URL} | \
+            jq -r '.assets[] | select(.name | endswith(".tar.gz")) | .url')
+
+          curl -L -H "Authorization: token ${GITHUB_TOKEN}" \
+               -H "Accept: application/octet-stream" \
+               "${ARTIFACT_URL}" -o protocol-artifacts.tar.gz
+
+          # Extract artifacts
+          mkdir -p protocol-update
+          tar xzf protocol-artifacts.tar.gz -C protocol-update
+
+      - name: Apply protocol updates
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Ensure target directories exist
+          mkdir -p specs/proto specs/schemas
+
+          # Copy protocol files
+          if [ -d "protocol-update/proto" ]; then
+            cp -r protocol-update/proto/* specs/proto/ || true
+          fi
+          if [ -f "protocol-update/securefabric.proto" ]; then
+            cp protocol-update/securefabric.proto specs/
+          fi
+
+          # Copy schemas if present
+          if [ -d "protocol-update/schemas" ]; then
+            cp -r protocol-update/schemas/* specs/schemas/
+          fi
+
+          # Update CHANGELOG if provided
+          if [ -f "protocol-update/CHANGELOG-${VERSION}.md" ]; then
+            # Prepend to existing CHANGELOG
+            cat protocol-update/CHANGELOG-${VERSION}.md CHANGELOG.md > CHANGELOG.md.new
+            mv CHANGELOG.md.new CHANGELOG.md
+          fi
+
+      - name: Setup Rust for codegen
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Python for codegen
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node for codegen
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Run SDK codegen
+        run: |
+          # Run the sync script which regenerates SDK code
+          bash tools/sync-proto.sh
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          fi
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BRANCH="${{ steps.version.outputs.branch }}"
+
+          # Create and switch to new branch
+          git checkout -b "${BRANCH}"
+
+          # Stage all changes
+          git add -A
+
+          # Commit changes
+          git commit -m "chore(specs): sync protocol ${VERSION}
+
+Protocol specification updated from private repository.
+
+- Updated specs/securefabric.proto
+- Regenerated SDK code for all languages
+- Updated CHANGELOG.md
+
+Version: ${VERSION}
+Source: ${{ steps.version.outputs.private_repo }}"
+
+          # Push branch
+          git push origin "${BRANCH}"
+
+          # Create PR using GitHub API
+          PR_BODY="## Protocol Sync ${VERSION}
+
+This PR synchronizes the protocol specification from the private repository.
+
+### Changes
+- Protocol specification updated to ${VERSION}
+- SDK code regenerated for all languages
+- CHANGELOG updated
+
+### Checklist
+- [x] Protocol files synced
+- [x] SDK code regenerated
+- [x] CHANGELOG updated
+- [ ] Manual review of breaking changes
+- [ ] SDK tests pass (will run in CI)
+
+### Source
+- Private Repository: ${{ steps.version.outputs.private_repo }}
+- Release: ${VERSION}
+
+/cc @NodeCube/securefabric-maintainers"
+
+          curl -X POST \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls \
+            -d "{\"title\":\"chore(specs): sync protocol ${VERSION}\",\"body\":$(echo "${PR_BODY}" | jq -Rs .),\"head\":\"${BRANCH}\",\"base\":\"main\"}"
+
+      - name: No changes
+        if: steps.changes.outputs.has_changes == 'false'
+        run: |
+          echo "✅ Protocol already up to date - no PR needed"

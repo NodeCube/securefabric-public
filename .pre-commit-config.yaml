@@ -1,0 +1,117 @@
+# SPDX-License-Identifier: Apache-2.0
+# Pre-commit hooks for SecureFabric Public SDKs
+
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Run: pre-commit run --all-files
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+        exclude: '\.json$'
+      - id: check-yaml
+        args: ['--safe']
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: detect-private-key
+        exclude: 'test_vectors\.json$'
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        args: ['--config', '.markdownlint.yaml']
+
+  # Python formatting and linting
+  - repo: https://github.com/psf/black
+    rev: 24.2.0
+    hooks:
+      - id: black
+        language_version: python3
+        files: '^sdk/python/.*\.py$'
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: '^sdk/python/.*\.py$'
+        args: ['--profile', 'black']
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        files: '^sdk/python/.*\.py$'
+        args: ['--max-line-length=100', '--extend-ignore=E203,W503']
+
+  # Rust formatting
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      - id: fmt
+        args: ['--manifest-path', 'sdk/rust/Cargo.toml', '--']
+        files: '^sdk/rust/.*\.rs$'
+      - id: clippy
+        args: ['--manifest-path', 'sdk/rust/Cargo.toml', '--', '-D', 'warnings']
+        files: '^sdk/rust/.*\.rs$'
+
+  # Protocol buffer validation
+  - repo: local
+    hooks:
+      - id: validate-proto
+        name: Validate Protocol Buffers
+        entry: bash -c 'protoc --proto_path=specs --descriptor_set_out=/dev/null specs/securefabric.proto'
+        language: system
+        files: '^specs/.*\.proto$'
+        pass_filenames: false
+
+  # License header check
+  - repo: local
+    hooks:
+      - id: check-license-headers
+        name: Check SPDX License Headers
+        entry: bash -c 'for file in "$@"; do if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then echo "Missing SPDX header: $file"; exit 1; fi; done'
+        language: system
+        files: '\.(rs|py|ts|js|proto|sh|yaml|yml)$'
+        exclude: '(node_modules|target|__pycache__|\.pytest_cache|securefabric_pb2)'
+
+  # No server code check
+  - repo: local
+    hooks:
+      - id: no-server-code
+        name: Prevent Server Code Commits
+        entry: bash -c 'for pattern in "infra/" "deploy/" "ansible/" "terraform/" "k8s/" "helm/" "docker-compose.yml"; do if echo "$@" | grep -q "$pattern"; then echo "ERROR: Cannot commit server/infrastructure code to public repo: $pattern"; exit 1; fi; done'
+        language: system
+        pass_filenames: true
+        files: '.'
+
+  # Test vectors validation
+  - repo: local
+    hooks:
+      - id: validate-test-vectors
+        name: Validate Test Vectors JSON
+        entry: python3 -c 'import json, sys; json.load(open("sdk/tests/test_vectors.json"))'
+        language: system
+        files: '^sdk/tests/test_vectors\.json$'
+        pass_filenames: false
+
+  # Changelog check for spec changes
+  - repo: local
+    hooks:
+      - id: changelog-for-specs
+        name: Require CHANGELOG update for spec changes
+        entry: bash -c 'if git diff --cached --name-only | grep -q "^specs/"; then if ! git diff --cached --name-only | grep -q "CHANGELOG.md"; then echo "ERROR: Spec files changed but CHANGELOG.md not updated"; exit 1; fi; fi'
+        language: system
+        pass_filenames: false
+        always_run: true
