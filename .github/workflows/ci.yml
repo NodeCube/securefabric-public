@@ -105,15 +105,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check for gitleaks license
+        id: check_license
+        run: |
+          if [ -n "${{ secrets.GITLEAKS_LICENSE }}" ]; then
+            echo "has_license=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_license=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run gitleaks
-        if: ${{ secrets.GITLEAKS_LICENSE != '' }}
+        if: steps.check_license.outputs.has_license == 'true'
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Skip gitleaks (no license)
-        if: ${{ secrets.GITLEAKS_LICENSE == '' }}
+        if: steps.check_license.outputs.has_license == 'false'
         run: |
           echo "⚠️  Skipping gitleaks: GITLEAKS_LICENSE secret not configured"
           echo ""
