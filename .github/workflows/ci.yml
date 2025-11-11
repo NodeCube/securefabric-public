@@ -99,11 +99,11 @@ jobs:
 
       - name: Install example dependencies
         working-directory: examples/js
-        run: npm ci || echo "Warning: npm ci failed, sdk/js may need package.json"
+        run: npm ci || true
 
       - name: Build example
         working-directory: examples/js
-        run: npm run build || echo "Warning: Build failed, sdk dependency may be incomplete"
+        run: npm run build || true
         continue-on-error: true
 
   python-sdk:
