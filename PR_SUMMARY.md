@@ -7,7 +7,7 @@
 
 ---
 
-# Security Hardening for Public Repository
+## Security Hardening for Public Repository
 
 This PR implements comprehensive security hardening to ensure the `securefabric-public` repository contains only public-facing content with no sensitive data, internal references, or proprietary information.
 
@@ -124,7 +124,9 @@ No files were removed in this PR. The `.gitignore` now blocks future commits of:
 ## ⚖️ License Compliance
 
 ### SPDX Headers Added
+
 All source files now include:
+
 ```rust
 // SPDX-License-Identifier: Apache-2.0
 ```
@@ -145,7 +147,7 @@ Updated files:
 
 ### CI Status: ✅ All Checks Pass
 
-```
+```text
 ✓ public-audit       - No sensitive files found
 ✓ secret-scan        - No secrets detected
 ✓ docs-quality       - Markdown/YAML valid, links OK
@@ -172,13 +174,15 @@ Updated files:
 
 ### For Contributors
 
-**New Requirements:**
+**New Requirements**
+
 1. All commits scanned for secrets (automatic)
 2. New source files must include SPDX headers
 3. Use `YOUR_TOKEN_HERE` placeholders in examples
 4. Reference public docs at `secure-fabric.io`
 
-**Updated Contacts:**
+**Updated Contacts**
+
 - Security reports: `security@secure-fabric.io`
 - General inquiries: `contact@secure-fabric.io`
 - Code of Conduct: `conduct@secure-fabric.io`
@@ -268,7 +272,7 @@ If you were using old contact emails:
 
 ## Instructions for Creating the PR
 
-1. Go to: https://github.com/NodeCube/securefabric-public/compare/main...claude/final-ci-fixes-011CUz9nSjQsBkCcvfXf3P9r
+1. Go to: <https://github.com/NodeCube/securefabric-public/compare/main...claude/final-ci-fixes-011CUz9nSjQsBkCcvfXf3P9r>
 
 2. Click "Create pull request"
 

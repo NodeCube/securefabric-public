@@ -8,7 +8,7 @@ repository.
 
 **IMPORTANT:** This repository is for SDKs and protocol specifications ONLY.
 
-### What You CAN Contribute:
+### What You CAN Contribute
 
 - Client SDK improvements (Rust, JavaScript/TypeScript, Python)
 - Protocol specification updates and clarifications
@@ -17,7 +17,7 @@ repository.
 - New language SDK implementations
 - Test coverage and conformance tests
 
-### What You CANNOT Contribute:
+### What You CANNOT Contribute
 
 - Server/node implementation changes (not in this repo)
 - Infrastructure, deployment, or operational code
