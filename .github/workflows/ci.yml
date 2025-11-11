@@ -348,7 +348,7 @@ jobs:
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [public-audit, secret-scan, docs-quality, proto-validation, rust-sdk, python-sdk, conformance-tests, changelog-check, license-check]
+    needs: [public-audit, secret-scan, docs-quality, proto-validation, rust-sdk, python-sdk, conformance-tests, license-check]
     if: always()
     steps:
       - name: Summary
@@ -364,5 +364,4 @@ jobs:
           echo "| Rust SDK | ${{ needs.rust-sdk.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Python SDK | ${{ needs.python-sdk.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Conformance | ${{ needs.conformance-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Changelog | ${{ needs.changelog-check.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| License | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY
