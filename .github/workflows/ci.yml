@@ -106,9 +106,24 @@ jobs:
           fetch-depth: 0
 
       - name: Run gitleaks
+        if: ${{ secrets.GITLEAKS_LICENSE != '' }}
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Skip gitleaks (no license)
+        if: ${{ secrets.GITLEAKS_LICENSE == '' }}
+        run: |
+          echo "⚠️  Skipping gitleaks: GITLEAKS_LICENSE secret not configured"
+          echo ""
+          echo "To enable automated secret scanning with gitleaks:"
+          echo "1. Get a license from https://gitleaks.io"
+          echo "2. Add it as a repository secret: Settings → Secrets → Actions → New repository secret"
+          echo "3. Name: GITLEAKS_LICENSE"
+          echo "4. Value: <your-license-key>"
+          echo ""
+          echo "Note: This is optional for public repositories. Manual security reviews are still performed."
 
   # Documentation quality
   docs-quality:
