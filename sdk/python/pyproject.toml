@@ -1,36 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "securefabric"
+name = "securefabric-client"
 version = "0.1.0"
-description = "Async Python SDK for SecureFabric node gRPC API"
+description = "Official Python client SDK for SecureFabric - secure, low-latency messaging fabric"
 authors = [
-    {name = "SecureFabric", email = "contact@securefabric.io"}
+    {name = "NodeCube d.o.o.", email = "contact@secure-fabric.io"}
 ]
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "AGPL-3.0-or-later" }
+license = "Apache-2.0"
 classifiers = [
-    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
     "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Networking",
+    "Typing :: Typed",
 ]
+keywords = ["securefabric", "messaging", "grpc", "secure", "fabric"]
 dependencies = [
-    "grpcio>=1.54",
-    "protobuf>=4.0",
+    "grpcio>=1.54.0",
+    "protobuf>=4.21.0",
+    "cryptography>=41.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest",
-    "pytest-asyncio",
-    "requests",
-    "black",
-    "mypy",
-    "grpcio-tools>=1.54",
-    "types-protobuf",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "requests>=2.28.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "grpcio-tools>=1.54.0",
+    "types-protobuf>=4.21.0",
     "types-grpcio",
 ]
 
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+[project.urls]
+Homepage = "https://secure-fabric.io"
+Documentation = "https://secure-fabric.io/docs"
+Repository = "https://github.com/NodeCube/securefabric-public"
+Issues = "https://github.com/NodeCube/securefabric-public/issues"
+Changelog = "https://github.com/NodeCube/securefabric-public/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["securefabric"]
+
+[tool.hatch.version]
+path = "securefabric/__init__.py"

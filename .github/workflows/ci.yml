@@ -164,6 +164,22 @@ jobs:
           done
           echo "PASS: Documentation complete"
 
+  # Packaging metadata validation
+  packaging-metadata:
+    name: Packaging Metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check packaging metadata
+        run: |
+          python tools/check-packaging-metadata.py
+
   # Protocol validation
   proto-validation:
     name: Protocol Buffers

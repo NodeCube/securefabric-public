@@ -1,0 +1,105 @@
+name: PyPI Release
+
+# Trigger on version tags or manual dispatch
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'PyPI target (pypi or testpypi)'
+        required: true
+        default: 'testpypi'
+        type: choice
+        options:
+          - pypi
+          - testpypi
+
+jobs:
+  build-and-upload:
+    name: Build and Upload to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # For trusted publishing
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine hatchling
+
+      - name: Build distribution packages
+        run: |
+          cd sdk/python
+          python -m build
+          ls -lh dist/
+
+      - name: Check package metadata
+        run: |
+          cd sdk/python
+          python -m twine check dist/*
+
+      - name: Determine upload target
+        id: target
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "target=${{ inputs.target }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" =~ ^refs/tags/v0\.0\. ]]; then
+            echo "target=testpypi" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" =~ ^refs/tags/v ]]; then
+            echo "target=pypi" >> $GITHUB_OUTPUT
+          else
+            echo "target=testpypi" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Show target
+        run: |
+          echo "Uploading to: ${{ steps.target.outputs.target }}"
+
+      - name: Upload to TestPyPI
+        if: steps.target.outputs.target == 'testpypi'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: |
+          cd sdk/python
+          python -m twine upload --repository testpypi dist/*
+
+      - name: Upload to PyPI
+        if: steps.target.outputs.target == 'pypi'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          cd sdk/python
+          python -m twine upload dist/*
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') && steps.target.outputs.target == 'pypi'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: securefabric-client ${{ github.ref_name }}
+          body: |
+            ## securefabric-client ${{ github.ref_name }}
+
+            Install with:
+            ```bash
+            pip install securefabric-client==${{ github.ref_name }}
+            ```
+
+            See [CHANGELOG.md](https://github.com/NodeCube/securefabric-public/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
