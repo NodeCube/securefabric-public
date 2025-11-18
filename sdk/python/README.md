@@ -3,7 +3,8 @@
 [![PyPI version](https://badge.fury.io/py/securefabric-client.svg)](https://badge.fury.io/py/securefabric-client)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-Official Python client library for SecureFabric - a secure, low-latency messaging fabric designed for verified senders and end-to-end confidentiality.
+Official Python client library for SecureFabric - a secure, low-latency
+messaging fabric designed for verified senders and end-to-end confidentiality.
 
 ## Features
 
@@ -290,11 +291,12 @@ Messages are wrapped in an `Envelope` protobuf with the following fields:
 
 ### Connection Errors
 
-```
+```text
 grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with: UNAVAILABLE>
 ```
 
 **Solution**: Check that:
+
 - The node address is correct
 - TLS certificates are valid
 - Network connectivity is available
@@ -302,7 +304,7 @@ grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
 
 ### Authentication Errors
 
-```
+```text
 grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with: UNAUTHENTICATED>
 ```
 
@@ -310,7 +312,7 @@ grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:
 
 ### Import Errors
 
-```
+```text
 ImportError: cannot import name 'securefabric_pb2'
 ```
 
