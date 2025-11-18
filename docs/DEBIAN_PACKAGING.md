@@ -30,7 +30,7 @@ The `securefabric-node` Debian package provides:
 
 In the `securefabric-core` repository, the following structure should be created:
 
-```
+```text
 securefabric-core/
 ├── debian/
 │   ├── control              # Package metadata and dependencies
@@ -51,7 +51,7 @@ securefabric-core/
 
 Create `debian/control`:
 
-```control
+```bash
 Source: securefabric-node
 Section: net
 Priority: optional
@@ -89,7 +89,7 @@ Description: SecureFabric messaging node
 
 Create `debian/rules`:
 
-```makefile
+```bash
 #!/usr/bin/make -f
 # SPDX-License-Identifier: Proprietary
 
@@ -97,23 +97,23 @@ export DH_VERBOSE = 1
 export CARGO_HOME = $(CURDIR)/debian/cargo
 
 %:
-	dh $@
+    dh $@
 
 override_dh_auto_build:
-	cargo build --release --locked
+    cargo build --release --locked
 
 override_dh_auto_install:
-	install -D -m 0755 target/release/securefabric-node \
-		debian/securefabric-node/usr/bin/securefabric-node
-	install -D -m 0644 debian/securefabric-node.service \
-		debian/securefabric-node/lib/systemd/system/securefabric-node.service
+    install -D -m 0755 target/release/securefabric-node \
+        debian/securefabric-node/usr/bin/securefabric-node
+    install -D -m 0644 debian/securefabric-node.service \
+        debian/securefabric-node/lib/systemd/system/securefabric-node.service
 
 override_dh_auto_clean:
-	cargo clean || true
-	rm -rf debian/cargo
+    cargo clean || true
+    rm -rf debian/cargo
 
 override_dh_auto_test:
-	# Skip tests during package build (run in CI instead)
+    # Skip tests during package build (run in CI instead)
 ```
 
 Make it executable:
@@ -126,7 +126,7 @@ chmod +x debian/rules
 
 Create `debian/install` (alternative to using rules):
 
-```
+```bash
 target/release/securefabric-node usr/bin/
 debian/securefabric-node.service lib/systemd/system/
 ```
@@ -135,7 +135,7 @@ debian/securefabric-node.service lib/systemd/system/
 
 Create `debian/changelog`:
 
-```
+```text
 securefabric-node (0.1.0-1) unstable; urgency=medium
 
   * Initial release
@@ -151,7 +151,7 @@ securefabric-node (0.1.0-1) unstable; urgency=medium
 
 Create `debian/securefabric-node.service`:
 
-```systemd
+```bash
 [Unit]
 Description=SecureFabric Node
 Documentation=https://secure-fabric.io/docs
@@ -435,27 +435,27 @@ chmod +x scripts/build_deb.sh
 
 Add to `Makefile`:
 
-```makefile
+```bash
 .PHONY: deb deb-clean deb-install
 
 # Build Debian package
 deb:
-	@bash scripts/build_deb.sh
+    @bash scripts/build_deb.sh
 
 # Clean Debian build artifacts
 deb-clean:
-	rm -rf dist/deb/
-	rm -rf debian/securefabric-node/
-	rm -rf debian/.debhelper/
-	rm -rf debian/cargo/
-	rm -f debian/files
-	rm -f debian/debhelper-build-stamp
-	rm -f debian/*.log
-	rm -f debian/*.substvars
+    rm -rf dist/deb/
+    rm -rf debian/securefabric-node/
+    rm -rf debian/.debhelper/
+    rm -rf debian/cargo/
+    rm -f debian/files
+    rm -f debian/debhelper-build-stamp
+    rm -f debian/*.log
+    rm -f debian/*.substvars
 
 # Install built package locally
 deb-install: deb
-	sudo dpkg -i dist/deb/securefabric-node_*.deb
+    sudo dpkg -i dist/deb/securefabric-node_*.deb
 ```
 
 ## GitHub Actions Workflow

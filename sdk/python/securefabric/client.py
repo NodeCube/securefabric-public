@@ -255,4 +255,5 @@ class SecureFabricClient:
         assert self._stub is not None, "Stub should be initialized after _build_channel"
 
         from google.protobuf.empty_pb2 import Empty
+
         return await self._stub.Stats(Empty())
