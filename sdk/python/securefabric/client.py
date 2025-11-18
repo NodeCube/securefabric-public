@@ -11,7 +11,7 @@ Provides high-level async API for connecting to SecureFabric nodes with support 
 """
 
 import asyncio
-from typing import AsyncIterator, Optional, Callable, Union
+from typing import Any, AsyncIterator, Optional, Callable, Union
 import grpc
 from grpc import aio
 import os
@@ -25,11 +25,8 @@ except ImportError:
         from securefabric_pb2 import SendReq, SubscribeReq, Envelope
         from securefabric_pb2_grpc import FabricNodeStub
     except Exception:
-        # placeholders for type checking if stubs are not generated in this environment
-        SendReq = None
-        SubscribeReq = None
-        Envelope = None
-        FabricNodeStub = None
+        # Fallback placeholders for type checking when stubs are not available
+        SendReq = SubscribeReq = Envelope = FabricNodeStub = Any  # type: ignore[misc,assignment]
 
 
 class SecureFabricClient:
