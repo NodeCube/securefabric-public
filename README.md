@@ -70,9 +70,36 @@ SF_ENDPOINT=YOUR_ENDPOINT_HERE SF_TOKEN=YOUR_TOKEN_HERE python send_receive.py
 - **Protocol Spec**: [specs/securefabric.proto](specs/securefabric.proto)
 - **API Reference**: [specs/api.md](specs/api.md)
 
-## Using the SDKs in Your Project
+## Installation
 
-### Rust
+### Python Client SDK
+
+Install the official Python client from PyPI:
+
+```bash
+pip install securefabric-client
+```
+
+Quick example:
+
+```python
+import asyncio
+from securefabric import SecureFabricClient
+
+async def main():
+    client = SecureFabricClient(
+        target="node.example.com:50051",
+        bearer_token="your-token-here"
+    )
+    await client.publish("sensors/temp", b"22.5C")
+    await client.close()
+
+asyncio.run(main())
+```
+
+**Documentation**: [sdk/python/README.md](sdk/python/README.md)
+
+### Rust SDK
 
 Add to your `Cargo.toml`:
 
@@ -81,17 +108,38 @@ Add to your `Cargo.toml`:
 securefabric-sdk = "0.1"
 ```
 
-### JavaScript/TypeScript
+**Documentation**: [sdk/rust/README.md](sdk/rust/README.md)
+
+### JavaScript/TypeScript SDK
 
 ```bash
 npm install @securefabric/sdk
 ```
 
-### Python
+**Documentation**: [sdk/js/README.md](sdk/js/README.md)
+
+### SecureFabric Node (Server)
+
+The SecureFabric node is distributed separately as a Debian package:
 
 ```bash
-pip install securefabric-sdk
+# Download the latest .deb from releases
+wget https://github.com/NodeCube/securefabric-core/releases/download/v0.1.0/securefabric-node_0.1.0-1_amd64.deb
+
+# Install
+sudo dpkg -i securefabric-node_0.1.0-1_amd64.deb
+
+# Configure
+sudo nano /etc/securefabric/.env
+
+# Start
+sudo systemctl start securefabric-node
 ```
+
+**Documentation**: [docs/DEBIAN_PACKAGING.md](docs/DEBIAN_PACKAGING.md)
+
+> **Note**: The node implementation is maintained in a private repository.
+> Only the client SDKs and protocol specifications are open source.
 
 ## Trademark Notice
 
