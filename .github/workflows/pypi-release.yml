@@ -21,7 +21,7 @@ jobs:
     name: Build and Upload to PyPI
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write  # Required for creating GitHub releases
       id-token: write  # For trusted publishing
 
     steps:
@@ -86,12 +86,9 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v') && steps.target.outputs.target == 'pypi'
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: securefabric-client ${{ github.ref_name }}
+          name: securefabric-client ${{ github.ref_name }}
           body: |
             ## securefabric-client ${{ github.ref_name }}
 
@@ -103,3 +100,5 @@ jobs:
             See [CHANGELOG.md](https://github.com/NodeCube/securefabric-public/blob/main/CHANGELOG.md) for details.
           draft: false
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
