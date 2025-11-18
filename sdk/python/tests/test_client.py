@@ -32,11 +32,12 @@ async def test_client_with_tls():
     """Test that a client can be constructed with TLS config"""
     from securefabric import SecureFabricClient
 
-    tls = {
-        "ca_cert": b"fake-ca",
-        "client_cert": b"fake-cert",
-        "client_key": b"fake-key",
-    }
-    client = SecureFabricClient("localhost:50051", tls=tls, bearer="test-token")
+    client = SecureFabricClient(
+        "localhost:50051",
+        ca_cert=b"fake-ca",
+        client_cert=b"fake-cert",
+        client_key=b"fake-key",
+        bearer_token="test-token",
+    )
     assert client is not None
     await client.close()
