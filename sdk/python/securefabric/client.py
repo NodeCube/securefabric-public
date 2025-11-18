@@ -22,11 +22,11 @@ try:
     from .securefabric_pb2_grpc import FabricNodeStub
 except ImportError:
     try:
-        from securefabric_pb2 import SendReq, SubscribeReq, Envelope
-        from securefabric_pb2_grpc import FabricNodeStub
+        from securefabric_pb2 import SendReq, SubscribeReq, Envelope  # type: ignore[no-redef]
+        from securefabric_pb2_grpc import FabricNodeStub  # type: ignore[no-redef]
     except Exception:
         # Fallback placeholders for type checking when stubs are not available
-        SendReq = SubscribeReq = Envelope = FabricNodeStub = Any  # type: ignore[misc,assignment]
+        SendReq = SubscribeReq = Envelope = FabricNodeStub = Any  # type: ignore[misc,assignment,no-redef]
 
 
 class SecureFabricClient:
